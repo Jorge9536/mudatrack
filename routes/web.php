@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ServicioController;
@@ -14,7 +15,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\AyudanteController;
 use App\Http\Controllers\ConfiguracionPrecioController;
 use App\Http\Controllers\UserController;
-use App\Models\User;
+use App\Http\Controllers\TwoFactorController;
 
 // ============================================
 // RUTAS DE AUTENTICACIÓN (PÚBLICAS)
@@ -33,9 +34,22 @@ Route::get('/', function () {
 });
 
 // ============================================
-// RUTAS PROTEGIDAS (REQUIEREN AUTENTICACIÓN)
+// RUTAS DE 2FA (FUERA DEL MIDDLEWARE 2FA)
 // ============================================
 Route::middleware(['auth'])->group(function () {
+    Route::get('/2fa/verify', [TwoFactorController::class, 'showVerifyForm'])->name('2fa.verify.form');
+    Route::post('/2fa/verify', [TwoFactorController::class, 'verify'])->name('2fa.verify');
+    Route::get('/2fa/setup', [TwoFactorController::class, 'showSetup'])->name('2fa.setup');
+    Route::post('/2fa/enable', [TwoFactorController::class, 'enable'])->name('2fa.enable');
+    Route::delete('/2fa/disable', [TwoFactorController::class, 'disable'])->name('2fa.disable');
+    Route::get('/2fa/recovery-codes', [TwoFactorController::class, 'showRecoveryCodes'])->name('2fa.recovery');
+    Route::post('/2fa/recovery-verify', [TwoFactorController::class, 'verifyRecoveryCode'])->name('2fa.recovery.verify');
+});
+
+// ============================================
+// RUTAS PROTEGIDAS (REQUIEREN AUTENTICACIÓN Y 2FA)
+// ============================================
+Route::middleware(['auth', '2fa'])->group(function () {
 
     // ---------- DASHBOARD (Todos los roles) ----------
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -53,21 +67,50 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/servicios/{servicio}/pago', [ServicioController::class, 'registrarPago'])->name('servicios.pago');
 
     // ---------- PAGOS (Todos los roles) ----------
-    Route::get('/pagos/configuracion-qr', [PagoController::class, 'configuracionQr'])->name('pagos.configuracion-qr');
-    Route::put('/pagos/configuracion-qr', [PagoController::class, 'actualizarQr'])->name('pagos.configuracion-qr.update');
-    Route::get('/pagos/{servicio}', [PagoController::class, 'index'])->name('pagos.index');
-    Route::post('/pagos/{servicio}/registrar', [PagoController::class, 'registrarPago'])->name('pagos.registrar');
+    // Las rutas de pagos están aquí, dentro del grupo protegido
+    Route::prefix('pagos')->group(function () {
+        Route::get('/configuracion-qr', [PagoController::class, 'configuracionQr'])->name('pagos.configuracion-qr');
+        Route::put('/configuracion-qr', [PagoController::class, 'actualizarQr'])->name('pagos.configuracion-qr.update');
+        Route::get('/{servicio}', [PagoController::class, 'index'])->name('pagos.index');
+        Route::post('/{servicio}/registrar', [PagoController::class, 'registrarPago'])->name('pagos.registrar');
+    });
 
     // ---------- GPS / SEGUIMIENTO (Todos los roles) ----------
-    Route::get('/gps', [GpsController::class, 'index'])->name('gps.index');
-    Route::get('/seguimiento/{servicio}', [GpsController::class, 'seguimiento'])->name('gps.seguimiento');
-    Route::post('/gps/actualizar', [GpsController::class, 'actualizar'])->name('gps.actualizar');
-    Route::get('/gps/{servicio}/ultima', [GpsController::class, 'ultimaUbicacion'])->name('gps.ultima');
-    Route::get('/gps/{servicio}/historial', [GpsController::class, 'historial'])->name('gps.historial');
+    Route::prefix('gps')->group(function () {
+        // Lista de servicios con GPS
+        Route::get('/', [GpsController::class, 'index'])->name('gps.index');
+        
+        // Seguimiento de un servicio específico
+        Route::get('/seguimiento/{id}', [GpsController::class, 'seguimiento'])->name('gps.seguimiento');
+        
+        // Actualizar ubicación (desde app móvil)
+        Route::post('/actualizar', [GpsController::class, 'actualizar'])->name('gps.actualizar');
+        
+        // Obtener última ubicación
+        Route::get('/{id}/ultima', [GpsController::class, 'ultimaUbicacion'])->name('gps.ultima');
+        
+        // Obtener historial de ubicaciones
+        Route::get('/{id}/historial', [GpsController::class, 'historial'])->name('gps.historial');
+        
+        // API para Firebase - ubicaciones en tiempo real
+        Route::get('/firebase/ubicaciones', [GpsController::class, 'getFirebaseUbicaciones'])->name('gps.firebase.ubicaciones');
+        
+        // ---------- GPS ADMIN (SOLO ADMIN) ----------
+        Route::middleware(['role:admin'])->group(function () {
+            Route::get('/admin-mapa', [GpsController::class, 'adminMapa'])->name('gps.admin.mapa');
+            Route::get('/api/vehiculos', [GpsController::class, 'getUbicacionesVehiculos'])->name('api.gps.vehiculos');
+        });
+    });
 
     // ---------- CHOFERES (SOLO ADMIN) ----------
     Route::middleware(['role:admin'])->group(function () {
-        Route::resource('choferes', ChoferController::class);
+        Route::get('/choferes', [ChoferController::class, 'index'])->name('choferes.index');
+        Route::get('/choferes/create', [ChoferController::class, 'create'])->name('choferes.create');
+        Route::post('/choferes', [ChoferController::class, 'store'])->name('choferes.store');
+        Route::get('/choferes/{chofer}', [ChoferController::class, 'show'])->name('choferes.show');
+        Route::get('/choferes/{chofer}/edit', [ChoferController::class, 'edit'])->name('choferes.edit');
+        Route::put('/choferes/{chofer}', [ChoferController::class, 'update'])->name('choferes.update');
+        Route::delete('/choferes/{chofer}', [ChoferController::class, 'destroy'])->name('choferes.destroy');
         Route::get('/chofer-panel', [ChoferController::class, 'panel'])->name('choferes.panel');
     });
 
@@ -83,17 +126,23 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reportes/exportar', [ReporteController::class, 'exportar'])->name('reportes.exportar');
         Route::get('/reportes/morosos', [ReporteController::class, 'morosos'])->name('reportes.morosos');
     });
+
     // ---------- AYUDANTES (SOLO ADMIN) ----------
-Route::middleware(['role:admin'])->group(function () {
-    Route::resource('ayudantes', AyudanteController::class);
-    Route::post('/ayudantes/{ayudante}/toggle-disponibilidad', [AyudanteController::class, 'toggleDisponibilidad'])->name('ayudantes.toggle-disponibilidad');
-});
-Route::middleware(['role:admin'])->group(function () {
-    Route::resource('users', UserController::class);
-    Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
-});
-Route::middleware(['role:admin'])->group(function () {
-    Route::get('/configuracion/precios', [ConfiguracionPrecioController::class, 'index'])->name('configuracion.precios');
-    Route::put('/configuracion/precios', [ConfiguracionPrecioController::class, 'update'])->name('configuracion.precios.update');
-});
-});
+    Route::middleware(['role:admin'])->group(function () {
+        Route::resource('ayudantes', AyudanteController::class);
+        Route::post('/ayudantes/{ayudante}/toggle-disponibilidad', [AyudanteController::class, 'toggleDisponibilidad'])->name('ayudantes.toggle-disponibilidad');
+    });
+
+    // ---------- USUARIOS (SOLO ADMIN) ----------
+    Route::middleware(['role:admin'])->group(function () {
+        Route::resource('users', UserController::class);
+        Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+    });
+
+    // ---------- CONFIGURACIÓN PRECIOS (SOLO ADMIN) ----------
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/configuracion/precios', [ConfiguracionPrecioController::class, 'index'])->name('configuracion.precios');
+        Route::put('/configuracion/precios', [ConfiguracionPrecioController::class, 'update'])->name('configuracion.precios.update');
+    });
+
+}); // FIN DEL GRUPO PRINCIPAL (auth, 2fa)

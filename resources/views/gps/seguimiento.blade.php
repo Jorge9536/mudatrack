@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Seguimiento GPS')
+@section('title', 'Seguimiento GPS - ' . $servicio->cliente->nombre_completo)
 
 @section('content')
 <div class="container-fluid">
@@ -13,11 +13,11 @@
             <small class="text-muted d-block">Servicio #{{ $servicio->id }} · {{ $servicio->cliente->nombre_completo }}</small>
         </div>
         <div>
-            <span class="badge bg-success">
+            <span class="badge bg-success" id="estado-conexion">
                 <i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> En vivo
             </span>
             <span class="badge bg-info ms-1">
-                <i class="fas fa-route me-1"></i> {{ $servicio->distancia_km ?? 'N/A' }} km
+                <i class="fas fa-sync me-1"></i> <span id="segundos">0</span>s
             </span>
         </div>
     </div>
@@ -27,39 +27,39 @@
         <div class="col-lg-8">
             <div class="card shadow-sm mb-3">
                 <div class="card-body p-0">
-                    <div id="mapa" style="height: 450px; border-radius: 12px; overflow: hidden;"></div>
+                    <div id="mapa" style="height: 500px; border-radius: 12px; overflow: hidden;"></div>
                 </div>
             </div>
             
-            <!-- Info adicional bajo el mapa -->
+            <!-- Info adicional -->
             <div class="card shadow-sm">
                 <div class="card-body">
                     <div class="row text-center">
-                        <div class="col-md-4">
-                            <div class="text-muted small">Distancia Total</div>
-                            <strong>{{ $servicio->distancia_km ?? '0' }} km</strong>
+                        <div class="col-md-3">
+                            <div class="text-muted small">Dispositivos Activos</div>
+                            <strong id="total-dispositivos">{{ count($dispositivosFirebase ?? []) }}</strong>
                         </div>
-                        <div class="col-md-4">
-                            <div class="text-muted small">Tiempo Estimado</div>
-                            <strong id="tiempo-estimado">25 min</strong>
+                        <div class="col-md-3">
+                            <div class="text-muted small">Última Actualización</div>
+                            <strong id="ultima-actualizacion">Hace 5 seg</strong>
                         </div>
-                        <div class="col-md-4">
-                            <div class="text-muted small">Progreso</div>
-                            <div class="d-flex align-items-center justify-content-center">
-                                <strong id="progreso">45%</strong>
-                                <div class="progress ms-2" style="width:60px; height:6px;">
-                                    <div id="barra-progreso" class="progress-bar bg-primary" style="width:45%"></div>
-                                </div>
-                            </div>
+                        <div class="col-md-3">
+                            <div class="text-muted small">Ubicaciones BD Local</div>
+                            <strong>{{ $ubicaciones->count() }}</strong>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-muted small">Estado</div>
+                            <strong class="text-success">
+                                <i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> Activo
+                            </strong>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Información -->
+        <!-- Información del servicio -->
         <div class="col-lg-4">
-            <!-- Estado del Servicio -->
             <div class="card shadow-sm mb-3" style="border-left: 4px solid #0d6efd;">
                 <div class="card-body">
                     <h6 class="border-bottom pb-2 mb-3">
@@ -67,41 +67,45 @@
                     </h6>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Estado</span>
-                        <span class="badge bg-warning text-dark">
+                        <span class="badge bg-{{ $servicio->estado == 'en_progreso' ? 'warning' : 'primary' }}">
                             {{ $servicio->estado_label }}
                         </span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Origen</span>
-                        <strong class="text-success" id="origen-text">
-                            <i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> 
-                            {{ Str::limit($servicio->origen, 25) }}
-                        </strong>
+                        <strong class="text-success">{{ Str::limit($servicio->origen, 25) }}</strong>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Destino</span>
-                        <strong class="text-danger" id="destino-text">
-                            <i class="fas fa-flag-checkered me-1"></i> 
-                            {{ Str::limit($servicio->destino, 25) }}
-                        </strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Distancia</span>
-                        <strong>{{ $servicio->distancia_km ?? '0' }} km</strong>
+                        <strong class="text-danger">{{ Str::limit($servicio->destino, 25) }}</strong>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Chofer</span>
                         <strong>{{ $servicio->chofer->nombre_completo ?? 'No asignado' }}</strong>
                     </div>
+                    @if($ubicacionFirebase)
                     <hr>
-                    <div class="text-center">
-                        <span class="badge bg-warning text-dark" style="padding: 8px 20px;">
-                            <i class="fas fa-clock me-1"></i> Tiempo estimado: <span id="eta">15 min</span>
-                        </span>
-                        <p class="text-muted small mt-2 mb-0">
-                            Distancia restante: <span id="distancia-restante">8.5 km</span>
-                        </p>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">📍 Firebase</span>
+                        <strong>
+                            {{ number_format($ubicacionFirebase['lat'], 6) }}, 
+                            {{ number_format($ubicacionFirebase['lng'], 6) }}
+                        </strong>
                     </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Dispositivo</span>
+                        <strong>{{ $ubicacionFirebase['modelo'] ?? 'Móvil' }}</strong>
+                    </div>
+                    @endif
+                    @if($ultimaUbicacion)
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">📍 BD Local</span>
+                        <strong>
+                            {{ number_format($ultimaUbicacion->latitud, 6) }}, 
+                            {{ number_format($ultimaUbicacion->longitud, 6) }}
+                        </strong>
+                    </div>
+                    @endif
                 </div>
             </div>
 
@@ -149,126 +153,162 @@
 @push('scripts')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 🔥 OBTENER COORDENADAS REALES DE LA BASE DE DATOS
-    // Si tienes coordenadas guardadas en el servicio, úsalas
-    // Por ahora usamos coordenadas de ejemplo para La Paz - El Alto
+    // Datos de Firebase
+    const dispositivosFirebase = @json($dispositivosFirebase);
+    const ubicacionFirebase = @json($ubicacionFirebase);
+    const servicio = @json($servicio);
+    const ubicacionesLocal = @json($ubicaciones);
     
-    const origen = [-16.500, -68.145];
-    const destino = [-16.490, -68.125];
-    const actual = [-16.495, -68.135];
-    
-    // Distancia real (si está en la base de datos)
-    const distanciaTotal = {{ $servicio->distancia_km ?? 15 }};
-    const distanciaRestante = distanciaTotal * 0.55; // Simulación
+    let map;
+    let markers = {};
+    let vehicleMarker = null;
+    let updateInterval;
+    let contadorSegundos = 0;
 
     // Inicializar mapa
-    const map = L.map('mapa').setView([-16.498, -68.135], 13);
+    function initMap() {
+        // Centro en Bolivia
+        const center = [-16.5, -68.13];
+        map = L.map('mapa').setView(center, 12);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+    }
 
-    // Marcador Origen
-    L.marker(origen, {
-        icon: L.divIcon({
-            html: '<i class="fas fa-circle" style="color:#198754;font-size:1.8rem;text-shadow:0 0 10px rgba(25,135,84,0.5);"></i>',
-            className: '',
-            iconSize: [20, 20]
-        })
-    }).addTo(map).bindPopup(`
-        <strong>📍 Origen</strong><br>
-        {{ $servicio->origen }}
-    `);
+    // Cargar ubicaciones de Firebase
+    function cargarUbicacionesFirebase() {
+        fetch('{{ route("gps.firebase.ubicaciones") }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data.length > 0) {
+                    actualizarMapa(data.data);
+                    actualizarContador(data.data.length);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
 
-    // Marcador Destino
-    L.marker(destino, {
-        icon: L.divIcon({
-            html: '<i class="fas fa-flag-checkered" style="color:#dc3545;font-size:1.8rem;text-shadow:0 0 10px rgba(220,53,69,0.5);"></i>',
-            className: '',
-            iconSize: [20, 20]
-        })
-    }).addTo(map).bindPopup(`
-        <strong>🏁 Destino</strong><br>
-        {{ $servicio->destino }}
-    `);
+    // Actualizar mapa con ubicaciones
+    function actualizarMapa(ubicaciones) {
+        // Limpiar marcadores anteriores
+        Object.keys(markers).forEach(key => {
+            if (markers[key]) {
+                map.removeLayer(markers[key]);
+            }
+        });
+        markers = {};
 
-    // Marcador Vehículo (animado)
-    const vehicleIcon = L.divIcon({
-        html: '<i class="fas fa-truck" style="font-size:2.8rem;color:#0d6efd;text-shadow:0 0 30px rgba(13,110,253,0.6);"></i>',
-        className: '',
-        iconSize: [30, 30]
-    });
-    const vehicleMarker = L.marker(actual, { icon: vehicleIcon }).addTo(map)
-        .bindPopup(`
-            <strong>🚚 Vehículo</strong><br>
-            Ubicación actual: Av. Montes, La Paz
-        `);
-
-    // Ruta simulada con más puntos para que se vea realista
-    const routePoints = [
-        [-16.500, -68.145],
-        [-16.499, -68.142],
-        [-16.498, -68.140],
-        [-16.497, -68.138],
-        [-16.496, -68.136],
-        [-16.495, -68.135],
-        [-16.494, -68.133],
-        [-16.493, -68.131],
-        [-16.492, -68.129],
-        [-16.491, -68.127],
-        [-16.490, -68.125]
-    ];
-    
-    // Dibujar la ruta
-    const routeLine = L.polyline(routePoints, { 
-        color: '#0d6efd', 
-        weight: 4, 
-        opacity: 0.8,
-        dashArray: '5, 10',
-        lineJoin: 'round'
-    }).addTo(map);
-
-    // Dibujar ruta recorrida (hasta la posición actual)
-    const puntosRecorridos = routePoints.slice(0, 5);
-    L.polyline(puntosRecorridos, { 
-        color: '#198754', 
-        weight: 5, 
-        opacity: 0.9,
-        lineJoin: 'round'
-    }).addTo(map);
-
-    // Ajustar zoom
-    map.fitBounds(routePoints);
-
-    // Simular movimiento del vehículo
-    let index = 4;
-    const totalPuntos = routePoints.length;
-    
-    setInterval(() => {
-        if (index < totalPuntos) {
-            const pos = routePoints[index];
-            vehicleMarker.setLatLng(pos);
+        // Mostrar ubicaciones de Firebase
+        ubicaciones.forEach(ubicacion => {
+            const color = ubicacion.plataforma === 'android' ? '#0d6efd' : '#6c757d';
             
-            // Actualizar progreso
-            const progreso = Math.round((index / totalPuntos) * 100);
-            document.getElementById('progreso').textContent = progreso + '%';
-            document.getElementById('barra-progreso').style.width = progreso + '%';
-            
-            // Actualizar distancia restante
-            const distanciaRest = distanciaTotal * (1 - (index / totalPuntos));
-            document.getElementById('distancia-restante').textContent = distanciaRest.toFixed(1) + ' km';
-            
-            // Actualizar ETA
-            const etaMin = Math.round(distanciaRest * 1.8);
-            document.getElementById('eta').textContent = etaMin + ' min';
-            document.getElementById('tiempo-estimado').textContent = etaMin + ' min';
-            
-            index++;
+            const icon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `
+                    <div style="background: ${color}; border-radius: 50%; width: 14px; height: 14px; border: 3px solid white; box-shadow: 0 0 15px rgba(13, 110, 253, 0.5);"></div>
+                `,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+
+            const marker = L.marker([ubicacion.lat, ubicacion.lng], { icon })
+                .addTo(map)
+                .bindPopup(`
+                    <strong>${ubicacion.nombre}</strong><br>
+                    <i class="fab fa-${ubicacion.plataforma}"></i> ${ubicacion.plataforma}<br>
+                    <i class="fas fa-id-card"></i> ${ubicacion.dispositivoId}<br>
+                    <i class="fas fa-map-pin"></i> ${ubicacion.lat.toFixed(6)}, ${ubicacion.lng.toFixed(6)}<br>
+                    <small><i class="fas fa-clock"></i> ${ubicacion.actualizado ? new Date(ubicacion.actualizado).toLocaleString() : 'Sin datos'}</small>
+                `);
+
+            markers[ubicacion.dispositivoId] = marker;
+        });
+
+        // Mostrar ubicaciones de la BD local (como línea de ruta)
+        if (ubicacionesLocal.length > 0) {
+            const points = ubicacionesLocal.map(u => [u.latitud, u.longitud]);
+            L.polyline(points, {
+                color: '#ffc107',
+                weight: 3,
+                opacity: 0.7,
+                dashArray: '5, 10'
+            }).addTo(map);
         }
-    }, 4000);
+
+        // Marcar el vehículo del servicio actual
+        if (ubicacionFirebase) {
+            const vehicleIcon = L.divIcon({
+                html: '<i class="fas fa-truck" style="font-size:2.8rem;color:#0d6efd;text-shadow:0 0 30px rgba(13,110,253,0.6);"></i>',
+                className: '',
+                iconSize: [30, 30]
+            });
+            vehicleMarker = L.marker([ubicacionFirebase.lat, ubicacionFirebase.lng], { icon: vehicleIcon })
+                .addTo(map)
+                .bindPopup(`
+                    <strong>🚚 Vehículo</strong><br>
+                    Chofer: ${servicio.chofer?.nombre_completo || 'N/A'}<br>
+                    Lat: ${ubicacionFirebase.lat.toFixed(6)}<br>
+                    Lng: ${ubicacionFirebase.lng.toFixed(6)}
+                `);
+        }
+
+        // Ajustar zoom
+        const allMarkers = Object.values(markers);
+        if (allMarkers.length > 0) {
+            const group = L.featureGroup(allMarkers);
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+    }
+
+    // Actualizar contador y tiempo
+    function actualizarContador(total) {
+        document.getElementById('total-dispositivos').textContent = total;
+        document.getElementById('ultima-actualizacion').textContent = 'Hace ' + contadorSegundos + ' seg';
+    }
+
+    // Actualizar contador de segundos
+    function actualizarSegundos() {
+        contadorSegundos++;
+        document.getElementById('segundos').textContent = contadorSegundos;
+        if (contadorSegundos > 10) {
+            document.getElementById('estado-conexion').className = 'badge bg-warning';
+            document.getElementById('estado-conexion').innerHTML = '<i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> Reconectando...';
+        }
+    }
+
+    // Inicializar
+    initMap();
+    cargarUbicacionesFirebase();
+
+    // Actualizar cada 10 segundos
+    updateInterval = setInterval(() => {
+        cargarUbicacionesFirebase();
+        contadorSegundos = 0;
+        document.getElementById('estado-conexion').className = 'badge bg-success';
+        document.getElementById('estado-conexion').innerHTML = '<i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> En vivo';
+    }, 10000);
+
+    // Actualizar contador de segundos cada segundo
+    setInterval(actualizarSegundos, 1000);
+
+    // Limpiar al salir
+    window.addEventListener('beforeunload', function() {
+        if (updateInterval) {
+            clearInterval(updateInterval);
+        }
+    });
 });
 </script>
+
+<style>
+    .custom-div-icon {
+        background: transparent;
+        border: none;
+    }
+</style>
 @endpush
 @endsection

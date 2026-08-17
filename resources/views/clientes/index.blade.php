@@ -70,7 +70,52 @@
                     </tbody>
                 </table>
             </div>
-            {{ $clientes->links() }}
+            
+            <!-- Paginación reducida -->
+            <div class="d-flex justify-content-center mt-3">
+                @if($clientes->hasPages())
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            {{-- Botón Anterior --}}
+                            @if($clientes->onFirstPage())
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        <i class="fas fa-chevron-left"></i> Anterior
+                                    </span>
+                                </li>
+                            @else
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ $clientes->previousPageUrl() }}" rel="prev">
+                                        <i class="fas fa-chevron-left"></i> Anterior
+                                    </a>
+                                </li>
+                            @endif
+
+                            {{-- Información de página --}}
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Página {{ $clientes->currentPage() }} de {{ $clientes->lastPage() }}
+                                </span>
+                            </li>
+
+                            {{-- Botón Siguiente --}}
+                            @if($clientes->hasMorePages())
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ $clientes->nextPageUrl() }}" rel="next">
+                                        Siguiente <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            @else
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        Siguiente <i class="fas fa-chevron-right"></i>
+                                    </span>
+                                </li>
+                            @endif
+                        </ul>
+                    </nav>
+                @endif
+            </div>
         </div>
     </div>
 </div>

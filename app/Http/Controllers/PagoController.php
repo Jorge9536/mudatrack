@@ -15,6 +15,9 @@ class PagoController extends BaseController
         $this->middleware('auth');
     }
 
+    /**
+     * Vista de selección de método de pago
+     */
     public function index(Servicio $servicio)
     {
         $servicio->load(['cliente', 'bienes']);
@@ -25,9 +28,18 @@ class PagoController extends BaseController
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('pagos.index', compact('servicio', 'historial'));
+        // ✅ Obtener la configuración del QR
+        $qr = ConfiguracionQr::first();
+        if (!$qr) {
+            $qr = new ConfiguracionQr();
+        }
+
+        return view('pagos.index', compact('servicio', 'historial', 'qr'));
     }
 
+    /**
+     * Registrar un pago
+     */
     public function registrarPago(Request $request, Servicio $servicio)
     {
         $validated = $request->validate([
@@ -58,12 +70,23 @@ class PagoController extends BaseController
         ]);
     }
 
+    /**
+     * Configuración QR - Mostrar el formulario
+     */
     public function configuracionQr()
     {
-        $qr = ConfiguracionQr::first() ?? new ConfiguracionQr();
+        $qr = ConfiguracionQr::first();
+        
+        if (!$qr) {
+            $qr = new ConfiguracionQr();
+        }
+        
         return view('pagos.configuracion-qr', compact('qr'));
     }
 
+    /**
+     * Actualizar QR - Guardar imagen o URL
+     */
     public function actualizarQr(Request $request)
     {
         $validated = $request->validate([
@@ -71,11 +94,26 @@ class PagoController extends BaseController
             'url_qr' => 'nullable|url'
         ]);
 
-        $qr = ConfiguracionQr::first() ?? new ConfiguracionQr();
+        $qr = ConfiguracionQr::first();
+        if (!$qr) {
+            $qr = new ConfiguracionQr();
+        }
 
         if ($request->hasFile('imagen_qr')) {
-            $path = $request->file('imagen_qr')->store('qrs', 'public');
+            if ($qr->imagen_qr) {
+                $oldPath = storage_path('app/public/' . $qr->imagen_qr);
+                if (file_exists($oldPath)) {
+                    unlink($oldPath);
+                }
+            }
+            
+            $file = $request->file('imagen_qr');
+            $extension = $file->getClientOriginalExtension();
+            $nombreArchivo = uniqid() . '.' . $extension;
+            $path = $file->storeAs('qrs', $nombreArchivo, 'public');
+            
             $qr->imagen_qr = $path;
+            $qr->url_qr = null;
         }
 
         if ($request->filled('url_qr')) {

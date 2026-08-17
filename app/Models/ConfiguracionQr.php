@@ -21,16 +21,55 @@ class ConfiguracionQr extends Model
         'fecha_actualizacion' => 'datetime'
     ];
 
+    /**
+     * Obtener la URL de la imagen
+     */
     public function getImagenUrlAttribute()
     {
         if ($this->imagen_qr) {
-            return asset('storage/' . $this->imagen_qr);
+            $path = storage_path('app/public/' . $this->imagen_qr);
+            if (file_exists($path)) {
+                return asset('storage/' . $this->imagen_qr);
+            }
         }
         return null;
     }
 
+    /**
+     * Obtener la URL del QR (imagen o URL externa)
+     */
+    public function getQrUrlAttribute()
+    {
+        // Prioridad: imagen sobre URL
+        if ($this->imagen_qr && $this->imagen_url) {
+            return $this->imagen_url;
+        }
+        
+        if ($this->url_qr) {
+            return $this->url_qr;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Verificar si tiene QR configurado
+     */
     public function tieneQr(): bool
     {
-        return !empty($this->imagen_qr) || !empty($this->url_qr);
+        // Verificar si tiene imagen y existe físicamente
+        if ($this->imagen_qr) {
+            $path = storage_path('app/public/' . $this->imagen_qr);
+            if (file_exists($path)) {
+                return true;
+            }
+        }
+        
+        // Verificar si tiene URL
+        if (!empty($this->url_qr)) {
+            return true;
+        }
+        
+        return false;
     }
 }

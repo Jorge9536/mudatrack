@@ -2,6 +2,37 @@
 
 @section('title', 'Servicios')
 
+@push('styles')
+<style>
+    /* Reducir el tamaño de la paginación */
+    .pagination-sm .page-link {
+        padding: 0.15rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .pagination {
+        margin-bottom: 0;
+    }
+    
+    .pagination .page-link {
+        padding: 0.15rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Ocultar elementos en móviles si es necesario */
+    @media (max-width: 576px) {
+        .pagination .page-item:not(.active):not(.prev):not(.next) .page-link {
+            display: none;
+        }
+        .pagination .page-item.active .page-link,
+        .pagination .page-item.prev .page-link,
+        .pagination .page-item.next .page-link {
+            display: block;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -128,8 +159,16 @@
                 </table>
             </div>
         </div>
-        <div class="card-footer bg-white">
-            {{ $servicios->links() }}
+        <div class="card-footer bg-white py-2">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span class="text-muted small">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Mostrando {{ $servicios->firstItem() ?? 0 }} - {{ $servicios->lastItem() ?? 0 }} de {{ $servicios->total() }} servicios
+                </span>
+                <div>
+                    {{ $servicios->links('pagination::bootstrap-5') }}
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -138,7 +177,7 @@
 <script>
 function cambiarEstado(servicioId) {
     const estados = ['pendiente', 'confirmado', 'en_progreso', 'finalizado', 'cancelado'];
-    let options = estados.map((e, i) => `${i+1}. ${e}`).join('\n');
+    let options = estados.map((e, i) => `${i+1}. ${e.replace('_', ' ')}`).join('\n');
     const nuevoEstado = prompt('Seleccione nuevo estado:\n' + options);
     
     if (nuevoEstado) {

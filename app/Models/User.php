@@ -17,25 +17,32 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role'
+        'role',
+        'google2fa_secret',
+        'google2fa_enabled',
+        'recovery_codes'
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'google2fa_secret',
+        'recovery_codes'
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'google2fa_enabled' => 'boolean',
+        'recovery_codes' => 'array'
     ];
 
-    // 🔥 CONSTANTES DE ROLES
+    // CONSTANTES DE ROLES
     public const ROL_ADMIN = 'admin';
     public const ROL_RECEPCIONISTA = 'recepcionista';
     public const ROL_CHOFER = 'chofer';
 
-    // 🔥 MÉTODOS PARA VERIFICAR ROLES
+    // MÉTODOS PARA VERIFICAR ROLES
     public function isAdmin(): bool
     {
         return $this->role === self::ROL_ADMIN;
