@@ -16,17 +16,11 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
-
-# 1. Copia TODO el código primero (esto incluye el archivo artisan)
 COPY . .
 
-# 2. Ahora sí, instala las dependencias de PHP
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-grpc
-
-# 3. Instala y compila los assets de frontend
 RUN npm install && npm run build
 
-# 4. Prepara las carpetas con permisos
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
