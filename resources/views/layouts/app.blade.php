@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>MudaTrackingenniero - @yield('title', 'Sistema de Gestión')</title>
+    <title>MudaTrack - @yield('title', 'Sistema de Gestión')</title>
     
     <!-- ============================================ -->
     <!-- CDNs - CARGADOS GLOBALMENTE -->
@@ -646,7 +646,7 @@
     <nav class="navbar navbar-expand-lg navbar-light shadow-sm" style="background-color: var(--bg-navbar); border-bottom: 1px solid var(--border-color);">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ route('dashboard') }}">
-                <i class="fas fa-truck me-2"></i>MudaTrack
+                <i class="fas fa-truck me-2"></i>MudaTrack 222
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
