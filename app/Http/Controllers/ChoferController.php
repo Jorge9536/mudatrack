@@ -28,10 +28,10 @@ class ChoferController extends BaseController
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nombre_completo' => 'required|string|max:255',
-            'telefono' => 'required|string|max:20|unique:choferes',
-            'licencia' => 'required|string|max:20|unique:choferes',
-            'observaciones' => 'nullable|string'
+            'nombre_completo' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'\-\.]+$/u'],
+            'telefono' => ['required', 'string', 'max:20', 'regex:/^[0-9\+\-\s\(\)]+$/', 'unique:choferes'],
+            'licencia' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9\-]+$/', 'unique:choferes'],
+            'observaciones' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $validated['disponible'] = true;
@@ -55,11 +55,11 @@ class ChoferController extends BaseController
     public function update(Request $request, Chofer $chofer)
     {
         $validated = $request->validate([
-            'nombre_completo' => 'required|string|max:255',
-            'telefono' => 'required|string|max:20|unique:choferes,telefono,' . $chofer->id,
-            'licencia' => 'required|string|max:20|unique:choferes,licencia,' . $chofer->id,
-            'disponible' => 'boolean',
-            'observaciones' => 'nullable|string'
+            'nombre_completo' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'\-\.]+$/u'],
+            'telefono' => ['required', 'string', 'max:20', 'regex:/^[0-9\+\-\s\(\)]+$/', 'unique:choferes,telefono,' . $chofer->id],
+            'licencia' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9\-]+$/', 'unique:choferes,licencia,' . $chofer->id],
+            'disponible' => ['boolean'],
+            'observaciones' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $chofer->update($validated);

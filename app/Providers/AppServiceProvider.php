@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Models\Servicio;
+use App\Observers\ServicioObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // 🔥 Observer de Servicio → replica a Firestore
+        Servicio::observe(ServicioObserver::class);
     }
 }

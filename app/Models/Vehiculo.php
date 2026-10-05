@@ -38,6 +38,23 @@ class Vehiculo extends Model
         return $this->hasMany(Servicio::class);
     }
 
+    /**
+     * 🚀 VERIFICAR DISPONIBILIDAD DEL VEHÍCULO (SIN excepción)
+     */
+    public function isAvailable($fecha, $horaInicio, $horaFin)
+    {
+        return !Servicio::verificarDisponibilidad($fecha, $horaInicio, $horaFin, $this->id, 'vehiculo');
+    }
+
+    /**
+     * 🔥 VERIFICAR DISPONIBILIDAD DEL VEHÍCULO (CON excepción)
+     * Útil para modificaciones donde el servicio actual debe excluirse
+     */
+    public function isAvailableForEdit($fecha, $horaInicio, $horaFin, $servicioId = null)
+    {
+        return !Servicio::verificarDisponibilidadConExcepcion($fecha, $horaInicio, $horaFin, $this->id, 'vehiculo', $servicioId);
+    }
+
     // Scope para vehículos disponibles
     public function scopeDisponible($query)
     {

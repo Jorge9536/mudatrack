@@ -18,8 +18,50 @@
                 <div class="card-body">
                     <form action="{{ route('servicios.store') }}" method="POST" id="formServicio">
                         @csrf
-                        
-                        <!-- Datos del Cliente -->
+
+                        <!-- ========================================== -->
+                        <!-- CAMPOS OCULTOS PARA FECHAS DEL CALENDARIO  -->
+                        <!-- ========================================== -->
+                        @if(isset($fechaSeleccionada) && $fechaSeleccionada)
+                            <input type="hidden" name="fecha_servicio" value="{{ $fechaSeleccionada }}">
+                        @endif
+
+                        @if(isset($horaInicioSeleccionada) && $horaInicioSeleccionada)
+                            <input type="hidden" name="hora_inicio" value="{{ $horaInicioSeleccionada }}">
+                        @endif
+
+                        @if(isset($horaFinSeleccionada) && $horaFinSeleccionada)
+                            <input type="hidden" name="hora_fin" value="{{ $horaFinSeleccionada }}">
+                        @endif
+
+                        <!-- ========================================== -->
+                        <!-- CAMPOS OCULTOS PARA COORDENADAS Y CIUDAD  -->
+                        <!-- ========================================== -->
+                        <input type="hidden" id="lat_origen" name="lat_origen" value="">
+                        <input type="hidden" id="lng_origen" name="lng_origen" value="">
+                        <input type="hidden" id="lat_destino" name="lat_destino" value="">
+                        <input type="hidden" id="lng_destino" name="lng_destino" value="">
+                        <input type="hidden" id="ciudad_origen" name="ciudad_origen" value="">
+                        <input type="hidden" id="ciudad_destino" name="ciudad_destino" value="">
+
+                        <!-- ========================================== -->
+                        <!-- ALERTA DE HORARIO SELECCIONADO             -->
+                        <!-- ========================================== -->
+                        @if(isset($fechaSeleccionada) && $fechaSeleccionada)
+                            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                <i class="fas fa-calendar-check"></i>
+                                <strong>Horario seleccionado desde el calendario:</strong><br>
+                                📅 Fecha: {{ \Carbon\Carbon::parse($fechaSeleccionada)->format('d/m/Y') }}
+                                @if(isset($horaInicioSeleccionada) && isset($horaFinSeleccionada))
+                                    🕐 De {{ $horaInicioSeleccionada }} a {{ $horaFinSeleccionada }}
+                                @endif
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+
+                        <!-- ========================================== -->
+                        <!-- DATOS DEL CLIENTE -->
+                        <!-- ========================================== -->
                         <h6 class="border-bottom pb-2 mb-3">
                             <i class="fas fa-user me-2 text-primary"></i>Datos del Cliente
                         </h6>
@@ -49,7 +91,9 @@
                             @enderror
                         </div>
 
-                        <!-- Datos del Servicio -->
+                        <!-- ========================================== -->
+                        <!-- DATOS DEL SERVICIO -->
+                        <!-- ========================================== -->
                         <h6 class="border-bottom pb-2 mb-3 mt-4">
                             <i class="fas fa-map-marked-alt me-2 text-primary"></i>Datos del Servicio
                         </h6>
@@ -65,7 +109,7 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-5 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label required">Origen</label>
                                 <input type="text" name="origen" id="origen" class="form-control @error('origen') is-invalid @enderror" 
                                        value="{{ old('origen') }}" placeholder="Ej. Av. 6 de Agosto, La Paz" required>
@@ -73,7 +117,7 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="col-md-5 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label required">Destino</label>
                                 <input type="text" name="destino" id="destino" class="form-control @error('destino') is-invalid @enderror" 
                                        value="{{ old('destino') }}" placeholder="Ej. Calle 12, El Alto" required>
@@ -81,44 +125,78 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="form-label">Distancia</label>
-                                <div class="input-group">
-                                    <input type="number" name="distancia_km" id="distancia" 
-                                           class="form-control @error('distancia_km') is-invalid @enderror" 
-                                           value="{{ old('distancia_km', 0) }}" step="0.1" min="0" readonly>
-                                    <span class="input-group-text">km</span>
-                                </div>
-                                <small class="text-muted">Se calcula automáticamente</small>
-                            </div>
                         </div>
+
+                        <!-- 🔥 CAMPO DISTANCIA OCULTO (para la cotización) -->
+                        <input type="hidden" name="distancia_km" id="distancia" value="0">
 
                         <div class="row">
                             <div class="col-md-3 mb-3">
                                 <label class="form-label required">Fecha</label>
                                 <input type="date" name="fecha_servicio" class="form-control @error('fecha_servicio') is-invalid @enderror" 
-                                       value="{{ old('fecha_servicio', date('Y-m-d', strtotime('+1 day'))) }}" required>
+                                       value="{{ old('fecha_servicio', isset($fechaSeleccionada) ? $fechaSeleccionada : date('Y-m-d', strtotime('+1 day'))) }}" required>
+                                @error('fecha_servicio')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Hora Inicio</label>
+                                <input type="time" name="hora_inicio" class="form-control @error('hora_inicio') is-invalid @enderror" 
+                                       value="{{ old('hora_inicio', isset($horaInicioSeleccionada) ? $horaInicioSeleccionada : '08:00') }}">
+                                @error('hora_inicio')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Hora Fin</label>
+                                <input type="time" name="hora_fin" class="form-control @error('hora_fin') is-invalid @enderror" 
+                                       value="{{ old('hora_fin', isset($horaFinSeleccionada) ? $horaFinSeleccionada : '09:00') }}">
+                                @error('hora_fin')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label class="form-label required">Ayudantes</label>
-                                <input type="number" name="cantidad_ayudantes" id="ayudantes" 
-                                       class="form-control" value="{{ old('cantidad_ayudantes', 0) }}" min="0" required>
+                                <select name="cantidad_ayudantes" id="ayudantes" class="form-select" required>
+                                    <option value="0">0 - Sin ayudantes</option>
+                                    @php
+                                        $totalAyudantes = \App\Models\Ayudante::count();
+                                    @endphp
+                                    @for($i = 1; $i <= $totalAyudantes; $i++)
+                                        <option value="{{ $i }}" {{ old('cantidad_ayudantes') == $i ? 'selected' : '' }}>
+                                            {{ $i }} - {{ $i == 1 ? 'Ayudante' : 'Ayudantes' }}
+                                        </option>
+                                    @endfor
+                                </select>
                             </div>
-                            <div class="col-md-3 mb-3">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label required">Pisos</label>
                                 <input type="number" name="numero_pisos" id="pisos" 
                                        class="form-control" value="{{ old('numero_pisos', 1) }}" min="1" required>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Callejón</label>
                                 <select name="es_callejon" id="callejon" class="form-select">
                                     <option value="0">No</option>
                                     <option value="1" {{ old('es_callejon') ? 'selected' : '' }}>Sí</option>
                                 </select>
                             </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Método de Pago</label>
+                                <select name="metodo_pago" class="form-select">
+                                    <option value="">-- Seleccione --</option>
+                                    <option value="efectivo" {{ old('metodo_pago') == 'efectivo' ? 'selected' : '' }}>Efectivo</option>
+                                    <option value="qr" {{ old('metodo_pago') == 'qr' ? 'selected' : '' }}>Código QR</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <!-- Lista de Bienes -->
+                        <!-- ========================================== -->
+                        <!-- LISTA DE BIENES -->
+                        <!-- ========================================== -->
                         <h6 class="border-bottom pb-2 mb-3 mt-4">
                             <i class="fas fa-boxes me-2 text-primary"></i>Lista de Bienes
                         </h6>
@@ -160,7 +238,9 @@
             </div>
         </div>
 
-        <!-- Resumen de Cotización -->
+        <!-- ========================================== -->
+        <!-- RESUMEN DE COTIZACIÓN -->
+        <!-- ========================================== -->
         @if(auth()->user()->isAdmin())
         <div class="col-lg-5">
             <div class="card shadow-sm sticky-top" style="top: 20px;">
@@ -198,44 +278,37 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ============================================
-// 🔍 BUSCADOR DE CLIENTES (CORREGIDO)
+// 🔍 BUSCADOR DE CLIENTES
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
     const buscador = document.getElementById('buscadorCliente');
     const selectClientes = document.getElementById('clienteSelect');
     const opciones = selectClientes.querySelectorAll('option');
     
-    // Guardar todas las opciones originales (excepto la primera)
     const opcionesOriginales = Array.from(opciones).filter(opt => opt.value !== '');
     
-    // Evento de búsqueda
     if (buscador) {
         buscador.addEventListener('input', function() {
             const textoBusqueda = this.value.toLowerCase().trim();
             
-            // Limpiar select pero mantener la opción por defecto
             selectClientes.innerHTML = '<option value="">-- Seleccione un cliente --</option>';
             
             if (textoBusqueda === '') {
-                // Si no hay búsqueda, mostrar todos
                 opcionesOriginales.forEach(opt => {
                     selectClientes.appendChild(opt.cloneNode(true));
                 });
             } else {
-                // Filtrar clientes
                 let encontrados = 0;
                 opcionesOriginales.forEach(opt => {
                     const nombre = opt.getAttribute('data-nombre') || '';
                     const telefono = opt.getAttribute('data-telefono') || '';
                     
-                    // Buscar en nombre y teléfono
                     if (nombre.includes(textoBusqueda) || telefono.includes(textoBusqueda)) {
                         selectClientes.appendChild(opt.cloneNode(true));
                         encontrados++;
                     }
                 });
                 
-                // Si no hay resultados, mostrar mensaje
                 if (encontrados === 0) {
                     const optionMsg = document.createElement('option');
                     optionMsg.value = '';
@@ -245,33 +318,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Recalcular tamaño del select
             selectClientes.size = Math.min(6, selectClientes.options.length);
         });
     }
 });
 
 // ============================================
-// 🔥 MAPA INTERACTIVO PARA SELECCIONAR ORIGEN Y DESTINO
+// 🔥 MAPA INTERACTIVO
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Coordenadas de La Paz (centro)
     const centroLaPaz = [-16.498, -68.135];
     
-    // Inicializar mapa
     const map = L.map('mapa').setView(centroLaPaz, 13);
 
-    // Capa de OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Variables para marcadores
     let markerOrigen = null;
     let markerDestino = null;
     let rutaLinea = null;
 
-    // 🔥 Función para calcular distancia usando API de OSRM (gratuita)
     function calcularDistanciaAPI(origenCoords, destinoCoords) {
         const url = `https://router.project-osrm.org/route/v1/driving/${origenCoords.lng},${origenCoords.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=false&geometries=geojson`;
         
@@ -283,26 +350,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     const distanciaKm = distanciaMetros / 1000;
                     
                     document.getElementById('distancia').value = distanciaKm.toFixed(1);
-                    
-                    // Actualizar cotización
                     calcularCotizacion();
-                    
-                    // Mostrar mensaje
-                    console.log(`✅ Distancia calculada: ${distanciaKm.toFixed(1)} km`);
-                } else {
-                    alert('❌ No se pudo calcular la distancia');
                 }
             })
             .catch(error => {
                 console.error('Error al calcular distancia:', error);
-                // Si falla, usar cálculo manual simple (coordenadas)
                 calcularDistanciaManual(origenCoords, destinoCoords);
             });
     }
 
-    // 🔥 Cálculo manual de distancia (alternativo)
     function calcularDistanciaManual(origen, destino) {
-        const R = 6371; // Radio de la Tierra en km
+        const R = 6371;
         const dLat = (destino.lat - origen.lat) * Math.PI / 180;
         const dLng = (destino.lng - origen.lng) * Math.PI / 180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -315,14 +373,86 @@ document.addEventListener('DOMContentLoaded', function() {
         calcularCotizacion();
     }
 
-    // 🔥 Evento: clic en el mapa
+    // ============================================
+    // 🔥 GEOCÓDIGO CON NOMINATIM (CORREGIDO)
+    // ============================================
+    function geocodificar(lat, lng, campo) {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18`;
+        
+        console.log('📡 Geocodificando:', campo, lat, lng);
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                console.log('📡 Respuesta de Nominatim:', data);
+                
+                if (data.display_name) {
+                    // ✅ ACTUALIZAR EL CAMPO CON LA DIRECCIÓN COMPLETA
+                    document.getElementById(campo).value = data.display_name;
+                    
+                    let ciudad = null;
+                    if (data.address) {
+                        ciudad = data.address.city || 
+                                data.address.town || 
+                                data.address.village || 
+                                data.address.municipality || 
+                                data.address.county;
+                    }
+                    
+                    if (!ciudad && data.display_name) {
+                        const partes = data.display_name.split(',');
+                        if (partes.length > 2) {
+                            ciudad = partes[2].trim();
+                        }
+                    }
+                    
+                    console.log('📍 Ciudad detectada:', ciudad);
+                    
+                    const ciudadInput = document.getElementById('ciudad_' + campo);
+                    if (ciudadInput) {
+                        ciudadInput.value = ciudad || 'La Paz';
+                    }
+                    
+                    // ✅ ESPERAR A QUE SE ACTUALICE EL DOM Y RECALCULAR
+                    setTimeout(function() {
+                        calcularCotizacion();
+                    }, 300);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error al geocodificar:', error);
+                const ciudad = determinarZonaPorCoordenadas(lat, lng);
+                const ciudadInput = document.getElementById('ciudad_' + campo);
+                if (ciudadInput) {
+                    ciudadInput.value = ciudad;
+                }
+                setTimeout(function() {
+                    calcularCotizacion();
+                }, 100);
+            });
+    }
+
+    // ============================================
+    // 📍 DETECTAR ZONA POR COORDENADAS
+    // ============================================
+    function determinarZonaPorCoordenadas(lat, lng) {
+        if (lat >= -16.53 && lat <= -16.43 && lng >= -68.22 && lng <= -68.12) {
+            return 'El Alto';
+        }
+        return 'La Paz';
+    }
+
+    // ============================================
+    // 🔥 CLIC EN EL MAPA
+    // ============================================
     map.on('click', function(e) {
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
-        const coords = { lat: lat, lng: lng };
 
-        // Si no hay origen, crear origen
         if (!markerOrigen) {
+            document.getElementById('lat_origen').value = lat;
+            document.getElementById('lng_origen').value = lng;
+            
             markerOrigen = L.marker([lat, lng], {
                 icon: L.divIcon({
                     html: '<i class="fas fa-circle" style="color:#198754;font-size:1.8rem;text-shadow:0 0 20px rgba(25,135,84,0.6);"></i>',
@@ -333,12 +463,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             document.getElementById('origen').value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
             markerOrigen.openPopup();
-            
-            // Geocodificar dirección
             geocodificar(lat, lng, 'origen');
             
-        // Si no hay destino, crear destino
         } else if (!markerDestino) {
+            document.getElementById('lat_destino').value = lat;
+            document.getElementById('lng_destino').value = lng;
+            
             markerDestino = L.marker([lat, lng], {
                 icon: L.divIcon({
                     html: '<i class="fas fa-flag-checkered" style="color:#dc3545;font-size:1.8rem;text-shadow:0 0 20px rgba(220,53,69,0.6);"></i>',
@@ -349,15 +479,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             document.getElementById('destino').value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
             markerDestino.openPopup();
-            
-            // Geocodificar dirección
             geocodificar(lat, lng, 'destino');
             
-            // 🔥 Calcular distancia automáticamente
             const origenCoords = markerOrigen.getLatLng();
             const destinoCoords = markerDestino.getLatLng();
             
-            // Dibujar línea de ruta
             if (rutaLinea) {
                 map.removeLayer(rutaLinea);
             }
@@ -371,16 +497,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 dashArray: '8, 8'
             }).addTo(map);
             
-            // Calcular distancia
             calcularDistanciaAPI(
                 { lat: origenCoords.lat, lng: origenCoords.lng },
                 { lat: destinoCoords.lat, lng: destinoCoords.lng }
             );
             
-        // Si ya hay origen y destino, resetear
         } else {
             if (confirm('¿Resetear puntos en el mapa?')) {
-                // Limpiar todo
                 if (markerOrigen) map.removeLayer(markerOrigen);
                 if (markerDestino) map.removeLayer(markerDestino);
                 if (rutaLinea) map.removeLayer(rutaLinea);
@@ -390,37 +513,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('origen').value = '';
                 document.getElementById('destino').value = '';
                 document.getElementById('distancia').value = '0';
+                document.getElementById('lat_origen').value = '';
+                document.getElementById('lng_origen').value = '';
+                document.getElementById('lat_destino').value = '';
+                document.getElementById('lng_destino').value = '';
+                document.getElementById('ciudad_origen').value = '';
+                document.getElementById('ciudad_destino').value = '';
                 calcularCotizacion();
             }
         }
     });
-
-    // 🔥 Geocodificación inversa (coordenadas → dirección)
-    function geocodificar(lat, lng, campo) {
-        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18`;
-        
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                if (data.display_name) {
-                    document.getElementById(campo).value = data.display_name;
-                }
-            })
-            .catch(error => console.error('Error al geocodificar:', error));
-    }
 });
 
 // ============================================
-// 🔥 RESTO DEL CÓDIGO (bienes, cotización, etc.)
+// 🔥 BIENES Y COTIZACIÓN
 // ============================================
 
 let bienIndex = 1;
 
-// 🔥 CONFIGURACIÓN DE PRECIOS
 const CONFIG_PRECIOS = {
     precio_la_paz: {{ $configPrecios->precio_la_paz ?? 300 }},
     precio_el_alto: {{ $configPrecios->precio_el_alto ?? 200 }},
-    precio_el_alto_la_paz: {{ $configPrecios->precio_el_alto_la_paz ?? 250 }},
+    precio_la_paz_a_el_alto: {{ $configPrecios->precio_el_alto_la_paz ?? 250 }},
+    precio_el_alto_a_la_paz: {{ $configPrecios->precio_el_alto_la_paz ?? 250 }},
     costo_ayudante: {{ $configPrecios->costo_ayudante ?? 80 }},
     costo_piso_adicional: {{ $configPrecios->costo_piso_adicional ?? 20 }},
     costo_callejon: {{ $configPrecios->costo_callejon ?? 30 }},
@@ -462,23 +577,104 @@ function eliminarBien(btn) {
     }
 }
 
+// ============================================
+// 🔥 FUNCIÓN determinarZona - CORREGIDA
+// ============================================
 function determinarZona(origen, destino) {
-    const origenLimpio = origen.toLowerCase().trim();
-    const destinoLimpio = destino.toLowerCase().trim();
-
-    if (origenLimpio.includes('la paz') && destinoLimpio.includes('la paz')) {
-        return 'la_paz';
-    }
-    if (origenLimpio.includes('el alto') && destinoLimpio.includes('el alto')) {
-        return 'el_alto';
-    }
-    if ((origenLimpio.includes('el alto') && destinoLimpio.includes('la paz')) ||
-        (origenLimpio.includes('la paz') && destinoLimpio.includes('el alto'))) {
+    // ✅ USAR LAS CIUDADES DETECTADAS POR LA API (MÁS CONFIABLE)
+    const ciudadOrigen = document.getElementById('ciudad_origen')?.value || '';
+    const ciudadDestino = document.getElementById('ciudad_destino')?.value || '';
+    
+    console.log('📍 Ciudad Origen (API):', ciudadOrigen);
+    console.log('📍 Ciudad Destino (API):', ciudadDestino);
+    
+    // Normalizar textos
+    const origenLimpio = ciudadOrigen.toLowerCase().trim();
+    const destinoLimpio = ciudadDestino.toLowerCase().trim();
+    
+    const esElAlto = (texto) => {
+        return texto.includes('el alto') || 
+               texto.includes('alto') || 
+               texto.includes('elalto') ||
+               texto === 'alto';
+    };
+    
+    const esLaPaz = (texto) => {
+        return texto.includes('la paz') || 
+               texto.includes('lapaz') ||
+               texto === 'la paz';
+    };
+    
+    const esElAltoOrigen = esElAlto(origenLimpio);
+    const esLaPazOrigen = esLaPaz(origenLimpio);
+    const esElAltoDestino = esElAlto(destinoLimpio);
+    const esLaPazDestino = esLaPaz(destinoLimpio);
+    
+    console.log('📍 El Alto Origen:', esElAltoOrigen);
+    console.log('📍 La Paz Origen:', esLaPazOrigen);
+    console.log('📍 El Alto Destino:', esElAltoDestino);
+    console.log('📍 La Paz Destino:', esLaPazDestino);
+    
+    // 🔥 PRIMERO: Combinaciones cruzadas (más específico)
+    if (esElAltoOrigen && esLaPazDestino) {
+        console.log('✅ EL ALTO → LA PAZ');
         return 'el_alto_a_la_paz';
     }
+    
+    if (esLaPazOrigen && esElAltoDestino) {
+        console.log('✅ LA PAZ → EL ALTO');
+        return 'la_paz_a_el_alto';
+    }
+    
+    // Ambos iguales
+    if (esElAltoOrigen && esElAltoDestino) {
+        console.log('✅ EL ALTO → EL ALTO');
+        return 'el_alto';
+    }
+    
+    if (esLaPazOrigen && esLaPazDestino) {
+        console.log('✅ LA PAZ → LA PAZ');
+        return 'la_paz';
+    }
+    
+    // Si no se detecta nada, usar el texto original como fallback
+    console.log('⚠️ Usando texto original para detectar zona');
+    
+    const orig = origen.toLowerCase().trim();
+    const dest = destino.toLowerCase().trim();
+    
+    const origElAlto = orig.includes('el alto') || orig.includes('alto');
+    const origLaPaz = orig.includes('la paz') || orig.includes('paz');
+    const destElAlto = dest.includes('el alto') || dest.includes('alto');
+    const destLaPaz = dest.includes('la paz') || dest.includes('paz');
+    
+    if (origElAlto && destLaPaz) {
+        console.log('✅ FALLBACK: EL ALTO → LA PAZ');
+        return 'el_alto_a_la_paz';
+    }
+    
+    if (origLaPaz && destElAlto) {
+        console.log('✅ FALLBACK: LA PAZ → EL ALTO');
+        return 'la_paz_a_el_alto';
+    }
+    
+    if (origElAlto && destElAlto) {
+        console.log('✅ FALLBACK: EL ALTO → EL ALTO');
+        return 'el_alto';
+    }
+    
+    if (origLaPaz && destLaPaz) {
+        console.log('✅ FALLBACK: LA PAZ → LA PAZ');
+        return 'la_paz';
+    }
+    
+    console.log('⚠️ No se detectó zona, usando La Paz por defecto');
     return 'la_paz';
 }
 
+// ============================================
+// 🔥 CALCULAR COTIZACIÓN
+// ============================================
 function calcularCotizacion() {
     const origen = document.getElementById('origen').value || '';
     const destino = document.getElementById('destino').value || '';
@@ -489,10 +685,13 @@ function calcularCotizacion() {
 
     const zona = determinarZona(origen, destino);
     
+    console.log('🏷️ Zona final:', zona);
+    
     const tarifas = {
         'la_paz': CONFIG_PRECIOS.precio_la_paz,
         'el_alto': CONFIG_PRECIOS.precio_el_alto,
-        'el_alto_a_la_paz': CONFIG_PRECIOS.precio_el_alto_la_paz
+        'la_paz_a_el_alto': CONFIG_PRECIOS.precio_la_paz_a_el_alto,
+        'el_alto_a_la_paz': CONFIG_PRECIOS.precio_el_alto_a_la_paz
     };
     
     const costoBase = tarifas[zona] || CONFIG_PRECIOS.precio_la_paz;
@@ -508,7 +707,13 @@ function calcularCotizacion() {
     
     const total = costoBase + costoAyudante + costoPisos + costoCallejon + costoKmExtra;
 
-    const zonaLabel = zona.replace('_', ' → ').toUpperCase();
+    const zonaLabels = {
+        'la_paz': 'LA PAZ → LA PAZ',
+        'el_alto': 'EL ALTO → EL ALTO',
+        'la_paz_a_el_alto': 'LA PAZ → EL ALTO',
+        'el_alto_a_la_paz': 'EL ALTO → LA PAZ'
+    };
+    const zonaLabel = zonaLabels[zona] || zona.toUpperCase();
 
     const preview = document.getElementById('cotizacion-preview');
     let html = `

@@ -5,32 +5,31 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Facades\Log;
 
 class GpsFirebaseController extends Controller
 {
     protected $client;
-    protected $firebaseUrl;
-    protected $projectId;
+    protected $firestoreUrl;
+    protected $apiKey;
 
     public function __construct()
     {
         $this->client = new Client();
-        $this->projectId = 'gps1-e12e5';
-        // URL de Firestore REST API
-        $this->firebaseUrl = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents";
+        $this->firestoreUrl = config('services.firebase.base_url');
+        $this->apiKey = config('services.firebase.api_key');
     }
 
-    // Obtener todas las ubicaciones desde Firebase usando REST API
+    /**
+     * Obtener todas las ubicaciones desde Firestore
+     */
     public function getUbicacionesMapa()
     {
         try {
-            // Endpoint para listar documentos en la colección "ubicaciones"
-            $url = $this->firebaseUrl . '/ubicaciones';
+            $url = "{$this->firestoreUrl}/ubicaciones?key={$this->apiKey}";
             
             $response = $this->client->get($url, [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ]
+                'headers' => ['Content-Type' => 'application/json']
             ]);
 
             $data = json_decode($response->getBody(), true);
@@ -40,7 +39,6 @@ class GpsFirebaseController extends Controller
                 foreach ($data['documents'] as $document) {
                     $fields = $document['fields'] ?? [];
                     
-                    // Extraer datos del documento
                     $ubicacion = [
                         'id' => basename($document['name']),
                         'dispositivoId' => $this->getFieldValue($fields, 'dispositivoId', 'string'),
@@ -64,7 +62,9 @@ class GpsFirebaseController extends Controller
                 'data' => $ubicaciones
             ]);
 
-        } catch (\Exception $e) {
+        } catch (GuzzleException $e) {
+            Log::error('Error obteniendo ubicaciones:', ['error' => $e->getMessage()]);
+
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
@@ -72,16 +72,16 @@ class GpsFirebaseController extends Controller
         }
     }
 
-    // Obtener un dispositivo específico
+    /**
+     * Obtener un dispositivo específico desde Firestore
+     */
     public function getUbicacionDispositivo($dispositivoId)
     {
         try {
-            $url = $this->firebaseUrl . '/ubicaciones/' . $dispositivoId;
+            $url = "{$this->firestoreUrl}/ubicaciones/{$dispositivoId}?key={$this->apiKey}";
             
             $response = $this->client->get($url, [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ]
+                'headers' => ['Content-Type' => 'application/json']
             ]);
 
             $document = json_decode($response->getBody(), true);
@@ -103,7 +103,12 @@ class GpsFirebaseController extends Controller
                 'data' => $ubicacion
             ]);
 
-        } catch (\Exception $e) {
+        } catch (GuzzleException $e) {
+            Log::error('Error obteniendo dispositivo:', [
+                'dispositivo_id' => $dispositivoId,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'error' => 'Dispositivo no encontrado: ' . $e->getMessage()
@@ -111,16 +116,16 @@ class GpsFirebaseController extends Controller
         }
     }
 
-    // Obtener todos los dispositivos activos
+    /**
+     * Obtener todos los dispositivos activos
+     */
     public function getDispositivos()
     {
         try {
-            $url = $this->firebaseUrl . '/ubicaciones';
+            $url = "{$this->firestoreUrl}/ubicaciones?key={$this->apiKey}";
             
             $response = $this->client->get($url, [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ]
+                'headers' => ['Content-Type' => 'application/json']
             ]);
 
             $data = json_decode($response->getBody(), true);
@@ -130,7 +135,7 @@ class GpsFirebaseController extends Controller
                 foreach ($data['documents'] as $document) {
                     $fields = $document['fields'] ?? [];
                     
-                    $dispositivo = [
+                    $dispositivos[] = [
                         'id' => basename($document['name']),
                         'dispositivoId' => $this->getFieldValue($fields, 'dispositivoId', 'string'),
                         'latitud' => (float) $this->getFieldValue($fields, 'latitud', 'double'),
@@ -139,8 +144,6 @@ class GpsFirebaseController extends Controller
                         'plataforma' => $this->getFieldValue($fields, 'plataforma', 'string') ?? 'desconocida',
                         'ultima_actualizacion' => $this->getFieldValue($fields, 'actualizado', 'string'),
                     ];
-
-                    $dispositivos[] = $dispositivo;
                 }
             }
 
@@ -149,7 +152,9 @@ class GpsFirebaseController extends Controller
                 'data' => $dispositivos
             ]);
 
-        } catch (\Exception $e) {
+        } catch (GuzzleException $e) {
+            Log::error('Error obteniendo dispositivos:', ['error' => $e->getMessage()]);
+
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
@@ -157,7 +162,43 @@ class GpsFirebaseController extends Controller
         }
     }
 
-    // Función auxiliar para extraer valores de Firestore
+    /**
+     * 🔥 ELIMINAR DISPOSITIVO DE FIRESTORE
+     */
+    public function eliminarDispositivo($dispositivoId)
+    {
+        try {
+            $url = "{$this->firestoreUrl}/ubicaciones/{$dispositivoId}?key={$this->apiKey}";
+
+            $response = $this->client->delete($url, [
+                'headers' => ['Content-Type' => 'application/json']
+            ]);
+
+            Log::info('Dispositivo eliminado de Firestore:', [
+                'dispositivo_id' => $dispositivoId
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Dispositivo '{$dispositivoId}' eliminado correctamente"
+            ]);
+
+        } catch (GuzzleException $e) {
+            Log::error('Error eliminando dispositivo:', [
+                'dispositivo_id' => $dispositivoId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al eliminar: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Función auxiliar para extraer valores de Firestore
+     */
     private function getFieldValue($fields, $fieldName, $type)
     {
         if (!isset($fields[$fieldName])) {
@@ -165,7 +206,7 @@ class GpsFirebaseController extends Controller
         }
 
         $field = $fields[$fieldName];
-        
+
         switch ($type) {
             case 'string':
                 return $field['stringValue'] ?? null;
@@ -179,26 +220,6 @@ class GpsFirebaseController extends Controller
                 return $field['timestampValue'] ?? null;
             default:
                 return null;
-        }
-    }
-
-    // Alternativa: Usar autenticación con API Key (más simple)
-    public function getUbicacionesSimple()
-    {
-        try {
-            // Usar API Key en lugar de autenticación OAuth
-            $apiKey = 'AIzaSyDmOFmU0Gi6dH6uED0RKC1ve3-4-h3CV90';
-            $url = "https://firestore.googleapis.com/v1/projects/gps1-e12e5/databases/(default)/documents/ubicaciones?key={$apiKey}";
-            
-            $response = $this->client->get($url);
-            $data = json_decode($response->getBody(), true);
-            
-            return response()->json($data);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => $e->getMessage()
-            ], 500);
         }
     }
 }

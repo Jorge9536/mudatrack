@@ -27,13 +27,13 @@ class ClienteController extends BaseController
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nombre_completo' => 'required|string|max:255',
-            'telefono' => 'required|string|max:20|unique:clientes',
-            'direccion' => 'nullable|string',
-            'latitud' => 'nullable|numeric',
-            'longitud' => 'nullable|numeric',
-            'foto_casa' => 'nullable|string',
-            'observaciones' => 'nullable|string'
+            'nombre_completo' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'\-\.]+$/u'],
+            'telefono' => ['required', 'string', 'max:20', 'regex:/^[0-9\+\-\s\(\)]+$/', 'unique:clientes'],
+            'direccion' => ['nullable', 'string', 'max:500'],
+            'latitud' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitud' => ['nullable', 'numeric', 'between:-180,180'],
+            'foto_casa' => ['nullable', 'string'],
+            'observaciones' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $cliente = Cliente::create($validated);
@@ -56,14 +56,14 @@ class ClienteController extends BaseController
     public function update(Request $request, Cliente $cliente)
     {
         $validated = $request->validate([
-            'nombre_completo' => 'required|string|max:255',
-            'telefono' => 'required|string|max:20|unique:clientes,telefono,' . $cliente->id,
-            'direccion' => 'nullable|string',
-            'latitud' => 'nullable|numeric',
-            'longitud' => 'nullable|numeric',
-            'foto_casa' => 'nullable|string',
-            'observaciones' => 'nullable|string',
-            'bloqueado' => 'boolean'
+            'nombre_completo' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'\-\.]+$/u'],
+            'telefono' => ['required', 'string', 'max:20', 'regex:/^[0-9\+\-\s\(\)]+$/', 'unique:clientes,telefono,' . $cliente->id],
+            'direccion' => ['nullable', 'string', 'max:500'],
+            'latitud' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitud' => ['nullable', 'numeric', 'between:-180,180'],
+            'foto_casa' => ['nullable', 'string'],
+            'observaciones' => ['nullable', 'string', 'max:1000'],
+            'bloqueado' => ['boolean'],
         ]);
 
         $cliente->update($validated);

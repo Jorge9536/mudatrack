@@ -37,12 +37,24 @@ class User extends Authenticatable
         'recovery_codes' => 'array'
     ];
 
+    // ============================================
     // CONSTANTES DE ROLES
+    // ============================================
     public const ROL_ADMIN = 'admin';
     public const ROL_RECEPCIONISTA = 'recepcionista';
     public const ROL_CHOFER = 'chofer';
 
+    // ============================================
+    // RELACIONES
+    // ============================================
+    public function chofer()
+    {
+        return $this->hasOne(Chofer::class);
+    }
+
+    // ============================================
     // MÉTODOS PARA VERIFICAR ROLES
+    // ============================================
     public function isAdmin(): bool
     {
         return $this->role === self::ROL_ADMIN;

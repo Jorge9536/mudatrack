@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\ConfiguracionPrecio;
-use App\Services\CotizacionService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 
@@ -21,7 +20,7 @@ class ConfiguracionPrecioController extends BaseController
         return view('configuracion.precios', compact('config'));
     }
 
-    public function update(Request $request, CotizacionService $cotizacionService)
+    public function update(Request $request)
     {
         $validated = $request->validate([
             'precio_la_paz' => 'required|numeric|min:0',
@@ -33,7 +32,14 @@ class ConfiguracionPrecioController extends BaseController
             'costo_km_extra' => 'required|numeric|min:0'
         ]);
 
-        $cotizacionService->actualizarConfiguracion($validated);
+        // 🔥 OBTENER LA CONFIGURACIÓN Y ACTUALIZAR DIRECTAMENTE
+        $config = ConfiguracionPrecio::first();
+        if (!$config) {
+            $config = new ConfiguracionPrecio();
+        }
+
+        $config->fill($validated);
+        $config->save();
 
         return redirect()->route('configuracion.precios')
             ->with('success', '✅ Precios actualizados exitosamente.');

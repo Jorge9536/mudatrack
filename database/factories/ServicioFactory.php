@@ -37,7 +37,9 @@ class ServicioFactory extends Factory
             'numero_pisos' => $this->faker->numberBetween(1, 4),
             'es_callejon' => $this->faker->boolean(20),
             'costo_total' => $this->faker->randomFloat(2, 200, 600),
-            'metodo_pago' => null,
+            // ✅ METODO_PAGO CON VALORES VÁLIDOS (no null)
+            'metodo_pago' => $this->faker->randomElement(['efectivo', 'qr', 'transferencia']),
+            // ✅ ESTADO CON VALORES VÁLIDOS (ya está bien)
             'estado' => $this->faker->randomElement(['pendiente', 'confirmado', 'en_progreso', 'finalizado', 'cancelado', 'pendiente_pago', 'pagado']),
             'observaciones' => $this->faker->optional(0.3)->sentence(),
             'created_at' => $this->faker->dateTimeBetween('-60 days', 'now'),

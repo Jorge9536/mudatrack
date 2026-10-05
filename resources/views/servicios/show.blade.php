@@ -10,6 +10,11 @@
         </a>
         <h1 class="h3 mb-0"><i class="fas fa-tasks me-2 text-primary"></i>Servicio #{{ $servicio->id }}</h1>
         <span class="badge bg-secondary ms-2">{{ $servicio->estado_label }}</span>
+        @if($servicio->estado_pago === 'pagado')
+            <span class="badge bg-success ms-2"><i class="fas fa-check-circle me-1"></i> Pagado</span>
+        @else
+            <span class="badge bg-danger ms-2"><i class="fas fa-clock me-1"></i> Pendiente de Pago</span>
+        @endif
     </div>
 
     <div class="row">
@@ -41,7 +46,19 @@
                         <div class="col-8"><strong>{{ $servicio->fecha_servicio->format('d/m/Y') }}</strong></div>
                     </div>
                     <div class="row mb-2">
-                        <div class="col-4 text-muted">Estado</div>
+                        <div class="col-4 text-muted">Hora</div>
+                        <div class="col-8">
+                            <strong>
+                                @if($servicio->hora_inicio && $servicio->hora_fin)
+                                    {{ \Carbon\Carbon::parse($servicio->hora_inicio)->format('H:i') }} - {{ \Carbon\Carbon::parse($servicio->hora_fin)->format('H:i') }}
+                                @else
+                                    No definida
+                                @endif
+                            </strong>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-4 text-muted">Estado Servicio</div>
                         <div class="col-8">
                             @php
                                 $badgeClass = [
@@ -50,11 +67,22 @@
                                     'en_progreso' => 'warning',
                                     'finalizado' => 'success',
                                     'cancelado' => 'danger',
-                                    'pendiente_pago' => 'danger',
-                                    'pagado' => 'success'
                                 ][$servicio->estado] ?? 'secondary';
                             @endphp
                             <span class="badge bg-{{ $badgeClass }}">{{ $servicio->estado_label }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-4 text-muted">Estado Pago</div>
+                        <div class="col-8">
+                            @if($servicio->estado_pago === 'pagado')
+                                <span class="badge bg-success">Pagado</span>
+                                @if($servicio->metodo_pago)
+                                    <small class="text-muted ms-2">({{ $servicio->metodo_pago_label }})</small>
+                                @endif
+                            @else
+                                <span class="badge bg-danger">Pendiente</span>
+                            @endif
                         </div>
                     </div>
                     <div class="row mb-2">
@@ -110,8 +138,17 @@
         <div class="col-lg-6">
             <!-- Asignación de Personal -->
             <div class="card shadow-sm mb-3">
-                <div class="card-header bg-white">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h6 class="mb-0"><i class="fas fa-users me-2 text-primary"></i>Asignación de Personal</h6>
+                    
+                    {{-- 🔥 BOTÓN MODIFICAR (solo si ya tiene asignación) --}}
+                    @if(($servicio->chofer_id || $servicio->vehiculo_id || $servicio->ayudantes->count() > 0) 
+                        && $servicio->estado != 'cancelado' 
+                        && $servicio->estado != 'finalizado')
+                        <a href="{{ route('servicios.asignar', $servicio) }}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit me-1"></i> Modificar
+                        </a>
+                    @endif
                 </div>
                 <div class="card-body">
                     <div class="row mb-2">
@@ -119,7 +156,7 @@
                         <div class="col-8">
                             @if($servicio->vehiculo)
                                 <strong>{{ $servicio->vehiculo->placa }}</strong>
-                                <span class="badge bg-secondary ms-1">{{ $servicio->vehiculo->tipo }}</span>
+                                <span class="badge bg-secondary ms-1">{{ $servicio->vehiculo->tipo_label }}</span>
                             @else
                                 <span class="text-muted">No asignado</span>
                             @endif
@@ -139,8 +176,14 @@
                     <div class="row mb-2">
                         <div class="col-4 text-muted">Ayudantes</div>
                         <div class="col-8">
-                            <strong>{{ $servicio->cantidad_ayudantes }}</strong>
-                            <span class="text-muted ms-1">requeridos</span>
+                            @if($servicio->ayudantes->count() > 0)
+                                @foreach($servicio->ayudantes as $ayudante)
+                                    <span class="badge bg-info me-1">{{ $ayudante->nombre_completo }}</span>
+                                @endforeach
+                            @else
+                                <span class="text-muted">No asignados</span>
+                            @endif
+                            <span class="text-muted ms-1">({{ $servicio->cantidad_ayudantes }} requeridos)</span>
                         </div>
                     </div>
                     <div class="row mb-2">
@@ -153,7 +196,10 @@
                         </div>
                     </div>
 
-                    @if(!$servicio->chofer || !$servicio->vehiculo)
+                    {{-- 🔥 BOTÓN ASIGNAR PERSONAL (cuando NO tiene asignación) --}}
+                    @if((!$servicio->chofer || !$servicio->vehiculo) 
+                        && $servicio->estado != 'cancelado' 
+                        && $servicio->estado != 'finalizado')
                         <div class="mt-3">
                             <a href="{{ route('servicios.asignar', $servicio) }}" class="btn btn-primary w-100">
                                 <i class="fas fa-user-plus me-1"></i> Asignar Personal
@@ -169,7 +215,7 @@
                     <h6 class="mb-0"><i class="fas fa-credit-card me-2 text-primary"></i>Estado de Pago</h6>
                 </div>
                 <div class="card-body">
-                    @if($servicio->estado === 'pagado')
+                    @if($servicio->estado_pago === 'pagado')
                         <div class="text-center py-2">
                             <span class="badge bg-success" style="font-size:1rem; padding:8px 20px;">
                                 <i class="fas fa-check-circle me-2"></i> Pagado
@@ -178,10 +224,10 @@
                                 Método: {{ $servicio->metodo_pago_label ?? 'No especificado' }}
                             </p>
                         </div>
-                    @elseif($servicio->estado === 'pendiente_pago')
+                    @else
                         <div class="text-center py-2">
                             <span class="badge bg-danger" style="font-size:1rem; padding:8px 20px;">
-                                <i class="fas fa-exclamation-triangle me-2"></i> Pendiente de Pago
+                                <i class="fas fa-clock me-2"></i> Pendiente de Pago
                             </span>
                             <p class="text-muted small mt-2 mb-0">
                                 <a href="{{ route('pagos.index', $servicio) }}" class="btn btn-warning btn-sm mt-2">
@@ -195,15 +241,6 @@
                                 Deuda registrada - Vence: {{ $servicio->deuda->fecha_vencimiento->format('d/m/Y') }}
                             </div>
                         @endif
-                    @else
-                        <div class="text-center py-2">
-                            <span class="badge bg-secondary" style="font-size:1rem; padding:8px 20px;">
-                                <i class="fas fa-hourglass-half me-2"></i> Pendiente
-                            </span>
-                            <p class="text-muted small mt-2 mb-0">
-                                El pago se realizará al finalizar el servicio
-                            </p>
-                        </div>
                     @endif
                 </div>
             </div>
@@ -215,7 +252,7 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        @if($servicio->estado !== 'finalizado' && $servicio->estado !== 'cancelado' && $servicio->estado !== 'pagado')
+                        @if($servicio->estado !== 'finalizado' && $servicio->estado !== 'cancelado')
                             <button class="btn btn-warning" onclick="cambiarEstado({{ $servicio->id }})">
                                 <i class="fas fa-exchange-alt me-1"></i> Cambiar Estado
                             </button>
@@ -229,6 +266,9 @@
                         <a href="{{ route('gps.seguimiento', $servicio) }}" class="btn btn-primary">
                             <i class="fas fa-map-marked-alt me-1"></i> Ver Seguimiento GPS
                         </a>
+                        <a href="{{ route('calendario.index') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-calendar-alt me-1"></i> Ver en Calendario
+                        </a>
                     </div>
                 </div>
             </div>
@@ -240,7 +280,7 @@
 <script>
 function cambiarEstado(servicioId) {
     const estados = ['pendiente', 'confirmado', 'en_progreso', 'finalizado', 'cancelado'];
-    let options = estados.map((e, i) => `${i+1}. ${e}`).join('\n');
+    let options = estados.map((e, i) => `${i+1}. ${e.replace('_', ' ')}`).join('\n');
     const nuevoEstado = prompt('Seleccione nuevo estado:\n' + options);
     
     if (nuevoEstado) {

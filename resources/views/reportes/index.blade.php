@@ -4,37 +4,19 @@
 
 @push('styles')
 <style>
-    /* Reducir el tamaño de la paginación */
     .pagination-sm .page-link {
         padding: 0.15rem 0.5rem;
         font-size: 0.8rem;
     }
-    
-    .pagination {
-        margin-bottom: 0;
-    }
-    
-    .pagination .page-link {
-        padding: 0.15rem 0.6rem;
-        font-size: 0.8rem;
-    }
-    
-    /* Ocultar elementos en móviles si es necesario */
+    .pagination { margin-bottom: 0; }
+    .pagination .page-link { padding: 0.15rem 0.6rem; font-size: 0.8rem; }
     @media (max-width: 576px) {
-        .pagination .page-item:not(.active):not(.prev):not(.next) .page-link {
-            display: none;
-        }
+        .pagination .page-item:not(.active):not(.prev):not(.next) .page-link { display: none; }
         .pagination .page-item.active .page-link,
         .pagination .page-item.prev .page-link,
-        .pagination .page-item.next .page-link {
-            display: block;
-        }
+        .pagination .page-item.next .page-link { display: block; }
     }
-
-    /* Mejorar el footer de la tabla */
-    .card-footer .text-muted {
-        font-size: 0.8rem;
-    }
+    .card-footer .text-muted { font-size: 0.8rem; }
 </style>
 @endpush
 
@@ -95,15 +77,15 @@
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <form method="GET" action="{{ route('reportes.index') }}" class="row g-2 align-items-end">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label small">Fecha Inicio</label>
                     <input type="date" name="fecha_inicio" class="form-control" 
-                           value="{{ request('fecha_inicio', now()->startOfMonth()->format('Y-m-d')) }}">
+                           value="{{ $fechaInicio }}">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label small">Fecha Fin</label>
                     <input type="date" name="fecha_fin" class="form-control" 
-                           value="{{ request('fecha_fin', now()->format('Y-m-d')) }}">
+                           value="{{ $fechaFin }}">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small">Cliente</label>
@@ -116,11 +98,30 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1">
-                        <i class="fas fa-search me-1"></i> Filtrar
+                <div class="col-md-2">
+                    <label class="form-label small">Estado Servicio</label>
+                    <select name="estado" class="form-select">
+                        <option value="">Todos</option>
+                        @foreach(\App\Models\Servicio::ESTADOS_LABEL as $key => $label)
+                            <option value="{{ $key }}" {{ request('estado') == $key ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Estado Pago</label>
+                    <select name="estado_pago" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="pendiente" {{ request('estado_pago') == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                        <option value="pagado" {{ request('estado_pago') == 'pagado' ? 'selected' : '' }}>Pagado</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary flex-grow-1" title="Filtrar">
+                        <i class="fas fa-search"></i>
                     </button>
-                    <a href="{{ route('reportes.index') }}" class="btn btn-outline-secondary">
+                    <a href="{{ route('reportes.index') }}" class="btn btn-outline-secondary" title="Limpiar">
                         <i class="fas fa-undo"></i>
                     </a>
                 </div>
@@ -128,27 +129,28 @@
         </div>
     </div>
 
-    <!-- Gráfico de estados -->
+    <!-- Gráficos -->
     <div class="row g-3 mb-4">
+        <!-- Gráfico de Estados Operativos -->
         <div class="col-md-6">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm h-100">
                 <div class="card-header bg-white">
-                    <h6 class="mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Distribución por Estado</h6>
+                    <h6 class="mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Servicios por Estado</h6>
                 </div>
                 <div class="card-body">
                     <div class="row g-2">
+                        @php
+                            $totalEstados = array_sum($estadisticas);
+                        @endphp
                         @foreach($estadisticas as $estado => $cantidad)
                             @php
-                                $total = $servicios->total();
-                                $porcentaje = $total > 0 ? round(($cantidad / $total) * 100) : 0;
+                                $porcentaje = $totalEstados > 0 ? round(($cantidad / $totalEstados) * 100) : 0;
                                 $colors = [
                                     'pendiente' => 'secondary',
                                     'confirmado' => 'primary',
                                     'en_progreso' => 'warning',
                                     'finalizado' => 'success',
                                     'cancelado' => 'danger',
-                                    'pendiente_pago' => 'danger',
-                                    'pagado' => 'success'
                                 ];
                                 $bgColor = $colors[$estado] ?? 'secondary';
                             @endphp
@@ -166,33 +168,59 @@
                 </div>
             </div>
         </div>
+
+        <!-- Gráfico de Estados de Pago -->
         <div class="col-md-6">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm h-100">
                 <div class="card-header bg-white">
-                    <h6 class="mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>Servicios por Día</h6>
+                    <h6 class="mb-0"><i class="fas fa-money-bill me-2 text-success"></i>Estados de Pago</h6>
                 </div>
                 <div class="card-body">
-                    @php
-                        use App\Models\Servicio;
-                        $dias = collect();
-                        for ($i = 6; $i >= 0; $i--) {
-                            $fecha = now()->subDays($i)->format('Y-m-d');
-                            $dias->put($fecha, 0);
-                        }
-                        $serviciosPorDia = Servicio::whereBetween('created_at', [
-                            now()->subDays(7)->startOfDay(),
-                            now()->endOfDay()
-                        ])->selectRaw('DATE(created_at) as fecha, COUNT(*) as total')
-                          ->groupBy('fecha')
-                          ->pluck('total', 'fecha');
-                        $dias = $dias->merge($serviciosPorDia);
-                    @endphp
+                    <div class="row g-2">
+                        @php
+                            $totalPagos = array_sum($estadisticasPago);
+                        @endphp
+                        @foreach($estadisticasPago as $estadoPago => $cantidad)
+                            @php
+                                $porcentaje = $totalPagos > 0 ? round(($cantidad / $totalPagos) * 100) : 0;
+                                $bgColor = $estadoPago === 'pagado' ? 'success' : 'danger';
+                                $icono = $estadoPago === 'pagado' ? 'check-circle' : 'clock';
+                            @endphp
+                            <div class="col-md-12 mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>
+                                        <i class="fas fa-{{ $icono }} text-{{ $bgColor }} me-2"></i>
+                                        {{ ucfirst($estadoPago) }}
+                                    </span>
+                                    <span><strong>{{ $cantidad }}</strong> ({{ $porcentaje }}%)</span>
+                                </div>
+                                <div class="progress" style="height: 12px;">
+                                    <div class="progress-bar bg-{{ $bgColor }}" style="width: {{ $porcentaje }}%"></div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Servicios por día -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>Servicios por Día (últimos 7 días)</h6>
+                </div>
+                <div class="card-body">
                     <div class="row g-2">
                         @foreach($dias as $fecha => $total)
-                            <div class="col-md-3 text-center">
-                                <div class="p-2 bg-light rounded">
-                                    <div class="small text-muted">{{ \Carbon\Carbon::parse($fecha)->format('D') }}</div>
-                                    <div class="h5 mb-0">{{ $total }}</div>
+                            <div class="col-md-3 col-6">
+                                <div class="p-2 bg-light rounded text-center">
+                                    <div class="small text-muted">
+                                        {{ \Carbon\Carbon::parse($fecha)->locale('es')->isoFormat('ddd D') }}
+                                    </div>
+                                    <div class="h4 mb-0">{{ $total }}</div>
                                 </div>
                             </div>
                         @endforeach
@@ -218,7 +246,7 @@
                             <th>Origen → Destino</th>
                             <th>Fecha</th>
                             <th>Monto</th>
-                            <th>Estado</th>
+                            <th>Estado Servicio</th>
                             <th>Pago</th>
                             <th>Acciones</th>
                         </tr>
@@ -228,9 +256,15 @@
                         <tr>
                             <td>#{{ $servicio->id }}</td>
                             <td>{{ $servicio->cliente->nombre_completo }}</td>
-                            <td>{{ $servicio->origen }} → {{ $servicio->destino }}</td>
+                            <td>
+                                <span title="{{ $servicio->origen }} → {{ $servicio->destino }}">
+                                    {{ Str::limit($servicio->origen, 25) }} → {{ Str::limit($servicio->destino, 25) }}
+                                </span>
+                            </td>
                             <td>{{ $servicio->fecha_servicio->format('d/m/Y') }}</td>
-                            <td>{{ number_format($servicio->costo_total, 2) }} Bs</td>
+                            <td><strong>{{ number_format($servicio->costo_total, 2) }} Bs</strong></td>
+                            
+                            {{-- ESTADO OPERATIVO --}}
                             <td>
                                 @php
                                     $badgeClass = [
@@ -239,28 +273,31 @@
                                         'en_progreso' => 'warning',
                                         'finalizado' => 'success',
                                         'cancelado' => 'danger',
-                                        'pendiente_pago' => 'danger',
-                                        'pagado' => 'success'
                                     ][$servicio->estado] ?? 'secondary';
                                 @endphp
                                 <span class="badge bg-{{ $badgeClass }}">
                                     {{ $servicio->estado_label }}
                                 </span>
                             </td>
+                            
+                            {{-- ESTADO DE PAGO --}}
                             <td>
-                                @if($servicio->estado === 'pagado')
-                                    <span class="badge bg-success">Pagado</span>
-                                @elseif($servicio->estado === 'pendiente_pago')
-                                    <span class="badge bg-danger">Deuda</span>
+                                @if($servicio->estado_pago === 'pagado')
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i> Pagado
+                                    </span>
                                 @else
-                                    <span class="badge bg-secondary">Pendiente</span>
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-clock me-1"></i> Pendiente
+                                    </span>
                                 @endif
                             </td>
+                            
                             <td>
-                                <a href="{{ route('servicios.show', $servicio) }}" class="btn btn-sm btn-info">
+                                <a href="{{ route('servicios.show', $servicio) }}" class="btn btn-sm btn-info" title="Ver">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ route('servicios.comprobante', $servicio) }}" class="btn btn-sm btn-success" target="_blank">
+                                <a href="{{ route('servicios.comprobante', $servicio) }}" class="btn btn-sm btn-success" target="_blank" title="PDF">
                                     <i class="fas fa-file-pdf"></i>
                                 </a>
                             </td>
@@ -268,7 +305,7 @@
                         @empty
                         <tr>
                             <td colspan="8" class="text-center text-muted py-4">
-                                <i class="fas fa-search fa-3x d-block mb-2"></i>
+                                <i class="fas fa-search fa-3x d-block mb-2 opacity-50"></i>
                                 <p>No hay servicios en el rango seleccionado</p>
                             </td>
                         </tr>

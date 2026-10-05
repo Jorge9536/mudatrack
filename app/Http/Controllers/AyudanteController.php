@@ -28,9 +28,9 @@ class AyudanteController extends BaseController
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nombre_completo' => 'required|string|max:255',
-            'telefono' => 'required|string|max:20|unique:ayudantes',
-            'disponible' => 'boolean'
+            'nombre_completo' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'\-\.]+$/u'],
+            'telefono' => ['required', 'string', 'max:20', 'regex:/^[0-9\+\-\s\(\)]+$/', 'unique:ayudantes'],
+            'disponible' => ['boolean'],
         ]);
 
         Ayudante::create($validated);
@@ -52,9 +52,9 @@ class AyudanteController extends BaseController
     public function update(Request $request, Ayudante $ayudante)
     {
         $validated = $request->validate([
-            'nombre_completo' => 'required|string|max:255',
-            'telefono' => 'required|string|max:20|unique:ayudantes,telefono,' . $ayudante->id,
-            'disponible' => 'boolean'
+            'nombre_completo' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'\-\.]+$/u'],
+            'telefono' => ['required', 'string', 'max:20', 'regex:/^[0-9\+\-\s\(\)]+$/', 'unique:ayudantes,telefono,' . $ayudante->id],
+            'disponible' => ['boolean'],
         ]);
 
         $ayudante->update($validated);

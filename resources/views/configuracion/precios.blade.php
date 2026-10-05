@@ -36,7 +36,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text">Bs</span>
                                     <input type="number" name="precio_la_paz" class="form-control" 
-                                           value="{{ $config->precio_la_paz }}" step="5" min="0">
+                                           value="{{ old('precio_la_paz', $config->precio_la_paz ?? 300) }}" step="5" min="0">
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -44,7 +44,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text">Bs</span>
                                     <input type="number" name="precio_el_alto" class="form-control" 
-                                           value="{{ $config->precio_el_alto }}" step="5" min="0">
+                                           value="{{ old('precio_el_alto', $config->precio_el_alto ?? 200) }}" step="5" min="0">
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -52,7 +52,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text">Bs</span>
                                     <input type="number" name="precio_el_alto_la_paz" class="form-control" 
-                                           value="{{ $config->precio_el_alto_la_paz }}" step="5" min="0">
+                                           value="{{ old('precio_el_alto_la_paz', $config->precio_el_alto_la_paz ?? 250) }}" step="5" min="0">
                                 </div>
                             </div>
                         </div>
@@ -67,7 +67,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text">Bs</span>
                                     <input type="number" name="costo_ayudante" class="form-control" 
-                                           value="{{ $config->costo_ayudante }}" step="5" min="0">
+                                           value="{{ old('costo_ayudante', $config->costo_ayudante ?? 80) }}" step="5" min="0">
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -75,7 +75,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text">Bs</span>
                                     <input type="number" name="costo_piso_adicional" class="form-control" 
-                                           value="{{ $config->costo_piso_adicional }}" step="5" min="0">
+                                           value="{{ old('costo_piso_adicional', $config->costo_piso_adicional ?? 20) }}" step="5" min="0">
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -83,7 +83,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text">Bs</span>
                                     <input type="number" name="costo_callejon" class="form-control" 
-                                           value="{{ $config->costo_callejon }}" step="5" min="0">
+                                           value="{{ old('costo_callejon', $config->costo_callejon ?? 30) }}" step="5" min="0">
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -91,7 +91,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text">Bs</span>
                                     <input type="number" name="costo_km_extra" class="form-control" 
-                                           value="{{ $config->costo_km_extra }}" step="1" min="0">
+                                           value="{{ old('costo_km_extra', $config->costo_km_extra ?? 5) }}" step="1" min="0">
                                 </div>
                             </div>
                         </div>
@@ -126,38 +126,43 @@
                             <tbody>
                                 <tr>
                                     <td>La Paz → La Paz</td>
-                                    <td><strong>{{ number_format($config->precio_la_paz, 2) }} Bs</strong></td>
+                                    <td><strong>{{ number_format($config->precio_la_paz ?? 0, 2) }} Bs</strong></td>
                                 </tr>
                                 <tr>
                                     <td>El Alto → El Alto</td>
-                                    <td><strong>{{ number_format($config->precio_el_alto, 2) }} Bs</strong></td>
+                                    <td><strong>{{ number_format($config->precio_el_alto ?? 0, 2) }} Bs</strong></td>
                                 </tr>
                                 <tr>
                                     <td>El Alto ↔ La Paz</td>
-                                    <td><strong>{{ number_format($config->precio_el_alto_la_paz, 2) }} Bs</strong></td>
+                                    <td><strong>{{ number_format($config->precio_el_alto_la_paz ?? 0, 2) }} Bs</strong></td>
                                 </tr>
                                 <tr>
                                     <td>Ayudante</td>
-                                    <td><strong>{{ number_format($config->costo_ayudante, 2) }} Bs</strong></td>
+                                    <td><strong>{{ number_format($config->costo_ayudante ?? 0, 2) }} Bs</strong></td>
                                 </tr>
                                 <tr>
                                     <td>Piso Adicional</td>
-                                    <td><strong>{{ number_format($config->costo_piso_adicional, 2) }} Bs</strong></td>
+                                    <td><strong>{{ number_format($config->costo_piso_adicional ?? 0, 2) }} Bs</strong></td>
                                 </tr>
                                 <tr>
                                     <td>Callejón</td>
-                                    <td><strong>{{ number_format($config->costo_callejon, 2) }} Bs</strong></td>
+                                    <td><strong>{{ number_format($config->costo_callejon ?? 0, 2) }} Bs</strong></td>
                                 </tr>
                                 <tr>
                                     <td>Km Extra</td>
-                                    <td><strong>{{ number_format($config->costo_km_extra, 2) }} Bs</strong></td>
+                                    <td><strong>{{ number_format($config->costo_km_extra ?? 0, 2) }} Bs</strong></td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                     <div class="alert alert-info small mt-2 mb-0">
                         <i class="fas fa-clock me-1"></i>
-                        Última actualización: {{ $config->updated_at->format('d/m/Y H:i') }}
+                        Última actualización: 
+                        @if(isset($config->updated_at) && $config->updated_at)
+                            {{ $config->updated_at->format('d/m/Y H:i') }}
+                        @else
+                            No registrada
+                        @endif
                     </div>
                 </div>
             </div>

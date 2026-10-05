@@ -41,17 +41,6 @@
                     <input type="text" name="direccion" class="form-control" value="{{ old('direccion', $cliente->direccion) }}">
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Latitud (GPS)</label>
-                        <input type="text" name="latitud" class="form-control" value="{{ old('latitud', $cliente->latitud) }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Longitud (GPS)</label>
-                        <input type="text" name="longitud" class="form-control" value="{{ old('longitud', $cliente->longitud) }}">
-                    </div>
-                </div>
-
                 <div class="mb-3">
                     <label class="form-label">Observaciones</label>
                     <textarea name="observaciones" class="form-control" rows="2">{{ old('observaciones', $cliente->observaciones) }}</textarea>

@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
             '2fa' => TwoFactorMiddleware::class,
+            'es_chofer' => \App\Http\Middleware\EsChofer::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

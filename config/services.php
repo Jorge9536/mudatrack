@@ -6,12 +6,6 @@ return [
     |--------------------------------------------------------------------------
     | Third Party Services
     |--------------------------------------------------------------------------
-    |
-    | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
-    |
     */
 
     'postmark' => [
@@ -34,5 +28,15 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+
+    // ============================================
+    // FIREBASE / FIRESTORE
+    // ============================================
+    'firebase' => [
+    'base_url' => env('FIREBASE_FIRESTORE_BASE_URL'),
+    'api_key' => env('FIREBASE_API_KEY'),
+    'project_id' => env('FIREBASE_PROJECT_ID', 'gps1-e12e5'),
+    'credentials' => storage_path('app/firebase/service-account.json'),
+],
 
 ];

@@ -16,6 +16,17 @@ use App\Http\Controllers\AyudanteController;
 use App\Http\Controllers\ConfiguracionPrecioController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\CalendarioController;
+use App\Http\Controllers\DispositivoController;
+
+// ============================================
+// 🔥 RUTAS PÚBLICAS DE SEGUIMIENTO (SIN LOGIN)
+// ============================================
+Route::get('/seguimiento/{token}', [GpsController::class, 'seguimientoPublico'])
+    ->name('seguimiento.publico');
+
+Route::get('/seguimiento/{token}/ubicacion', [GpsController::class, 'ubicacionPublica'])
+    ->name('seguimiento.publico.ubicacion');
 
 // ============================================
 // RUTAS DE AUTENTICACIÓN (PÚBLICAS)
@@ -34,7 +45,7 @@ Route::get('/', function () {
 });
 
 // ============================================
-// RUTAS DE 2FA (FUERA DEL MIDDLEWARE 2FA)
+// RUTAS DE 2FA
 // ============================================
 Route::middleware(['auth'])->group(function () {
     Route::get('/2fa/verify', [TwoFactorController::class, 'showVerifyForm'])->name('2fa.verify.form');
@@ -47,27 +58,27 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // ============================================
-// RUTAS PROTEGIDAS (REQUIEREN AUTENTICACIÓN Y 2FA)
+// RUTAS PROTEGIDAS
 // ============================================
 Route::middleware(['auth', '2fa'])->group(function () {
 
-    // ---------- DASHBOARD (Todos los roles) ----------
+    // DASHBOARD
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // ---------- CLIENTES (Todos los roles) ----------
+    // CLIENTES
     Route::resource('clientes', ClienteController::class);
     Route::post('/clientes/{cliente}/toggle-bloqueo', [ClienteController::class, 'toggleBloqueo'])->name('clientes.toggle-bloqueo');
 
-    // ---------- SERVICIOS (Todos los roles) ----------
+    // SERVICIOS
     Route::resource('servicios', ServicioController::class);
     Route::put('/servicios/{servicio}/estado', [ServicioController::class, 'updateStatus'])->name('servicios.estado');
     Route::get('/servicios/{servicio}/asignar', [ServicioController::class, 'showAsignarForm'])->name('servicios.asignar.form');
     Route::post('/servicios/{servicio}/asignar', [ServicioController::class, 'assignPersonal'])->name('servicios.asignar');
     Route::get('/servicios/{servicio}/comprobante', [ServicioController::class, 'generarComprobante'])->name('servicios.comprobante');
     Route::post('/servicios/{servicio}/pago', [ServicioController::class, 'registrarPago'])->name('servicios.pago');
+    Route::post('/servicios/{servicio}/enviar-whatsapp', [ServicioController::class, 'enviarWhatsApp'])->name('servicios.enviar.whatsapp');
 
-    // ---------- PAGOS (Todos los roles) ----------
-    // Las rutas de pagos están aquí, dentro del grupo protegido
+    // PAGOS
     Route::prefix('pagos')->group(function () {
         Route::get('/configuracion-qr', [PagoController::class, 'configuracionQr'])->name('pagos.configuracion-qr');
         Route::put('/configuracion-qr', [PagoController::class, 'actualizarQr'])->name('pagos.configuracion-qr.update');
@@ -75,34 +86,25 @@ Route::middleware(['auth', '2fa'])->group(function () {
         Route::post('/{servicio}/registrar', [PagoController::class, 'registrarPago'])->name('pagos.registrar');
     });
 
-    // ---------- GPS / SEGUIMIENTO (Todos los roles) ----------
+    // GPS / SEGUIMIENTO (privado)
     Route::prefix('gps')->group(function () {
-        // Lista de servicios con GPS
         Route::get('/', [GpsController::class, 'index'])->name('gps.index');
-        
-        // Seguimiento de un servicio específico
         Route::get('/seguimiento/{id}', [GpsController::class, 'seguimiento'])->name('gps.seguimiento');
-        
-        // Actualizar ubicación (desde app móvil)
         Route::post('/actualizar', [GpsController::class, 'actualizar'])->name('gps.actualizar');
-        
-        // Obtener última ubicación
         Route::get('/{id}/ultima', [GpsController::class, 'ultimaUbicacion'])->name('gps.ultima');
-        
-        // Obtener historial de ubicaciones
         Route::get('/{id}/historial', [GpsController::class, 'historial'])->name('gps.historial');
-        
-        // API para Firebase - ubicaciones en tiempo real
         Route::get('/firebase/ubicaciones', [GpsController::class, 'getFirebaseUbicaciones'])->name('gps.firebase.ubicaciones');
         
-        // ---------- GPS ADMIN (SOLO ADMIN) ----------
+        Route::get('/dispositivo/{dispositivoId}/ubicacion', [GpsController::class, 'getUbicacionDispositivoApi'])
+            ->name('gps.dispositivo.ubicacion');
+        
         Route::middleware(['role:admin'])->group(function () {
             Route::get('/admin-mapa', [GpsController::class, 'adminMapa'])->name('gps.admin.mapa');
             Route::get('/api/vehiculos', [GpsController::class, 'getUbicacionesVehiculos'])->name('api.gps.vehiculos');
         });
     });
 
-    // ---------- CHOFERES (SOLO ADMIN) ----------
+    // CHOFERES
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/choferes', [ChoferController::class, 'index'])->name('choferes.index');
         Route::get('/choferes/create', [ChoferController::class, 'create'])->name('choferes.create');
@@ -114,35 +116,57 @@ Route::middleware(['auth', '2fa'])->group(function () {
         Route::get('/chofer-panel', [ChoferController::class, 'panel'])->name('choferes.panel');
     });
 
-    // ---------- VEHÍCULOS (SOLO ADMIN) ----------
+    // VEHÍCULOS
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('vehiculos', VehiculoController::class);
         Route::post('/vehiculos/{vehiculo}/toggle-disponibilidad', [VehiculoController::class, 'toggleDisponibilidad'])->name('vehiculos.toggle-disponibilidad');
     });
 
-    // ---------- REPORTES (SOLO ADMIN Y RECEPCIONISTA) ----------
+    // ============================================
+    // 🔥 REPORTES (ACTUALIZADO CON NUEVA RUTA)
+    // ============================================
     Route::middleware(['role:admin,recepcionista'])->group(function () {
         Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
         Route::get('/reportes/exportar', [ReporteController::class, 'exportar'])->name('reportes.exportar');
         Route::get('/reportes/morosos', [ReporteController::class, 'morosos'])->name('reportes.morosos');
+        Route::get('/reportes/morosos/{clienteId}/deudas', [ReporteController::class, 'deudasCliente'])->name('reportes.morosos.deudas');
     });
 
-    // ---------- AYUDANTES (SOLO ADMIN) ----------
+    // AYUDANTES
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('ayudantes', AyudanteController::class);
         Route::post('/ayudantes/{ayudante}/toggle-disponibilidad', [AyudanteController::class, 'toggleDisponibilidad'])->name('ayudantes.toggle-disponibilidad');
     });
 
-    // ---------- USUARIOS (SOLO ADMIN) ----------
+    // DISPOSITIVOS GPS
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/dispositivos/firestore/lista', [DispositivoController::class, 'obtenerDeFirestore'])
+            ->name('dispositivos.firestore.lista');
+
+        Route::delete('/dispositivos/firestore/{dispositivoId}/eliminar', [DispositivoController::class, 'eliminarDeFirestorePorId'])
+            ->name('dispositivos.firestore.eliminar');
+
+        Route::delete('/dispositivos/{dispositivo}/eliminar-firestore', [DispositivoController::class, 'eliminarDeFirestore'])
+            ->name('dispositivos.eliminar.firestore');
+
+        Route::resource('dispositivos', DispositivoController::class);
+    });
+
+    // USUARIOS
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('users', UserController::class);
         Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
     });
 
-    // ---------- CONFIGURACIÓN PRECIOS (SOLO ADMIN) ----------
+    // CONFIGURACIÓN PRECIOS
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/configuracion/precios', [ConfiguracionPrecioController::class, 'index'])->name('configuracion.precios');
         Route::put('/configuracion/precios', [ConfiguracionPrecioController::class, 'update'])->name('configuracion.precios.update');
     });
 
-}); // FIN DEL GRUPO PRINCIPAL (auth, 2fa)
+    // CALENDARIO
+    Route::get('/calendario', [CalendarioController::class, 'index'])->name('calendario.index');
+    Route::get('/api/eventos', [CalendarioController::class, 'eventos'])->name('api.eventos');
+    Route::get('/api/recursos-disponibles', [CalendarioController::class, 'recursosDisponibles'])->name('api.recursos-disponibles');
+
+});

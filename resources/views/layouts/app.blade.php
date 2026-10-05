@@ -6,26 +6,58 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>MudaTrack - @yield('title', 'Sistema de Gestión')</title>
     
+    <!-- ============================================ -->
+    <!-- CDNs - CARGADOS GLOBALMENTE -->
+    <!-- ============================================ -->
+    
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- 🔥 LEAFLET PARA MAPAS -->
+    <!-- Leaflet para mapas -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     
+    <!-- ============================================ -->
+    <!-- FULLCALENDAR - CARGADO GLOBALMENTE -->
+    <!-- ============================================ -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+    
     <style>
         /* ============================================ */
-        /* ESTILOS BASE (PC y MÓVIL) */
+        /* VARIABLES DE COLOR GLOBALES (TEMA CLARO POR DEFECTO) */
+        /* ============================================ */
+        :root {
+            /* Paleta por defecto (Gris azulado profesional) */
+            --bg-body: #f8fafc;          /* Slate 50 */
+            --bg-card: #ffffff;          /* Blanco */
+            --bg-navbar: #ffffff;
+            --bg-sidebar: #ffffff;
+            --text-primary: #0f172a;     /* Slate 900 - Para títulos y números */
+            --text-secondary: #334155;   /* Slate 700 - Texto normal */
+            --text-muted: #64748b;       /* Slate 500 - Texto secundario */
+            --border-color: #e2e8f0;     /* Slate 200 - Bordes suaves */
+            --shadow-color: rgba(15, 23, 42, 0.06);
+            --primary-color: #3b82f6;    /* Blue 500 - Acento principal */
+            --primary-hover: #2563eb;    /* Blue 600 */
+            --sidebar-active-bg: #3b82f6;
+            --sidebar-active-text: #ffffff;
+            --sidebar-hover-bg: #f1f5f9; /* Slate 100 */
+            --sidebar-hover-text: #3b82f6;
+        }
+
+        /* ============================================ */
+        /* ESTILOS BASE */
         /* ============================================ */
         * {
             box-sizing: border-box;
         }
         
         body {
-            background: #f4f6f9;
+            background: var(--bg-body);
+            color: var(--text-secondary);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;
             width: 100%;
@@ -33,180 +65,261 @@
         }
         
         .navbar-brand {
-            font-weight: 700;
-            color: #0d6efd !important;
+            font-weight: 800;
+            color: var(--primary-color) !important;
+            font-size: 1.3rem;
+            letter-spacing: -0.5px;
+        }
+
+        /* ============================================ */
+        /* TARJETAS Y COMPONENTES */
+        /* ============================================ */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px var(--shadow-color);
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 10px 20px var(--shadow-color);
         }
         
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--border-color);
+            padding: 18px 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 1.05rem;
+        }
+
+        .card-body {
+            padding: 22px;
+        }
+
+        /* Números grandes en las tarjetas del dashboard */
+        .card h2, .card .h2, .card .display-4, .card .display-5 {
+            color: var(--text-primary);
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        /* Textos secundarios dentro de las tarjetas */
+        .card p, .card .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        /* Títulos de sección dentro de las tarjetas */
+        .card .card-title, .card h5, .card h6 {
+            color: var(--text-primary);
+        }
+
         /* ============================================ */
-        /* SIDEBAR - ESTILOS BASE */
+        /* 🎨 ARREGLO PARA TARJETAS DE ESTADO (SERVICIOS) */
+        /* ============================================ */
+        
+        /* Convertimos las tarjetas de estado en tarjetas con fondo suave (pastel) 
+           y borde de color, en lugar de fondo saturado. Esto hace que los números
+           se lean perfectamente y se vea más profesional. */
+        
+        .card.bg-secondary {
+            background-color: rgba(108, 117, 125, 0.1) !important;
+            color: #475569 !important;
+            border: 2px solid #94a3b8 !important;
+        }
+        .card.bg-secondary .display-4, .card.bg-secondary .h2, 
+        .card.bg-secondary .h3, .card.bg-secondary h2, 
+        .card.bg-secondary h3, .card.bg-secondary p {
+            color: #475569 !important;
+        }
+
+        .card.bg-primary {
+            background-color: rgba(59, 130, 246, 0.1) !important;
+            color: #1e40af !important;
+            border: 2px solid #3b82f6 !important;
+        }
+        .card.bg-primary .display-4, .card.bg-primary .h2, 
+        .card.bg-primary .h3, .card.bg-primary h2, 
+        .card.bg-primary h3, .card.bg-primary p {
+            color: #1e40af !important;
+        }
+
+        .card.bg-warning {
+            background-color: rgba(245, 158, 11, 0.1) !important;
+            color: #92400e !important;
+            border: 2px solid #f59e0b !important;
+        }
+        .card.bg-warning .display-4, .card.bg-warning .h2, 
+        .card.bg-warning .h3, .card.bg-warning h2, 
+        .card.bg-warning h3, .card.bg-warning p {
+            color: #92400e !important;
+        }
+
+        .card.bg-success {
+            background-color: rgba(16, 185, 129, 0.1) !important;
+            color: #065f46 !important;
+            border: 2px solid #10b981 !important;
+        }
+        .card.bg-success .display-4, .card.bg-success .h2, 
+        .card.bg-success .h3, .card.bg-success h2, 
+        .card.bg-success h3, .card.bg-success p {
+            color: #065f46 !important;
+        }
+
+        .card.bg-danger {
+            background-color: rgba(244, 63, 94, 0.1) !important;
+            color: #9f1239 !important;
+            border: 2px solid #f43f5e !important;
+        }
+        .card.bg-danger .display-4, .card.bg-danger .h2, 
+        .card.bg-danger .h3, .card.bg-danger h2, 
+        .card.bg-danger h3, .card.bg-danger p {
+            color: #9f1239 !important;
+        }
+
+        .card.bg-info {
+            background-color: rgba(14, 165, 233, 0.1) !important;
+            color: #0c4a6e !important;
+            border: 2px solid #0ea5e9 !important;
+        }
+        .card.bg-info .display-4, .card.bg-info .h2, 
+        .card.bg-info .h3, .card.bg-info h2, 
+        .card.bg-info h3, .card.bg-info p {
+            color: #0c4a6e !important;
+        }
+
+        /* Caso general: si alguna tarjeta usa bg-dark o bg-custom, forzamos texto blanco */
+        .card.bg-dark {
+            background-color: rgba(15, 23, 42, 0.1) !important;
+            color: #0f172a !important;
+            border: 2px solid #0f172a !important;
+        }
+        .card.bg-dark .display-4, .card.bg-dark h2, .card.bg-dark h3, .card.bg-dark p {
+            color: #0f172a !important;
+        }
+
+        /* ============================================ */
+        /* SIDEBAR */
         /* ============================================ */
         .sidebar {
             min-height: 100vh;
-            background: white;
-            border-right: 1px solid #e9ecef;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
             padding: 20px 0;
             transition: all 0.3s ease;
+            overflow-x: hidden; 
         }
         
         .sidebar .nav-link {
-            color: #6c757d;
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin: 2px 10px;
+            color: var(--text-secondary);
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin: 4px 12px;
             transition: all 0.2s;
-            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            white-space: normal; 
+            line-height: 1.4;
         }
         
         .sidebar .nav-link:hover {
-            background: #f0f7ff;
-            color: #0d6efd;
+            background: var(--sidebar-hover-bg);
+            color: var(--sidebar-hover-text);
+            transform: translateX(4px);
         }
         
         .sidebar .nav-link.active {
-            background: #0d6efd;
-            color: white;
+            background: var(--sidebar-active-bg);
+            color: var(--sidebar-active-text);
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
         }
         
         .sidebar .nav-link i {
             width: 24px;
             text-align: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
         }
         
-        /* Estilo especial para el enlace de 2FA */
-        .sidebar .nav-link.twofa-active {
-            color: #198754;
-        }
-        
-        .sidebar .nav-link.twofa-active i {
-            color: #198754;
-        }
-        
-        .sidebar .nav-link.twofa-inactive {
-            color: #ffc107;
-        }
-        
-        .sidebar .nav-link.twofa-inactive i {
-            color: #ffc107;
-        }
+        /* Estilos específicos para 2FA */
+        .sidebar .nav-link.twofa-active { color: #10b981; }
+        .sidebar .nav-link.twofa-active i { color: #10b981; }
+        .sidebar .nav-link.twofa-inactive { color: #f59e0b; }
+        .sidebar .nav-link.twofa-inactive i { color: #f59e0b; }
         
         /* Estilo para Mapa de Vehículos */
         .sidebar .nav-link.vehicle-map {
-            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-            border-left: 3px solid #0d6efd;
+            background: linear-gradient(135deg, var(--sidebar-hover-bg), rgba(59, 130, 246, 0.1));
+            border-left: 4px solid var(--primary-color);
         }
-        
         .sidebar .nav-link.vehicle-map:hover {
-            background: linear-gradient(135deg, #bbdefb, #90caf9);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05));
         }
-        
         .sidebar .nav-link.vehicle-map.active {
-            background: #0d6efd;
+            background: var(--primary-color);
             color: white;
             border-left-color: white;
         }
+        .sidebar .nav-link.vehicle-map i.fa-truck { color: var(--primary-color); }
+        .sidebar .nav-link.vehicle-map.active i.fa-truck { color: white; }
         
-        .sidebar .nav-link.vehicle-map i.fa-truck {
-            color: #0d6efd;
-        }
-        
-        .sidebar .nav-link.vehicle-map.active i.fa-truck {
-            color: white;
-        }
-        
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-        
-        .card-header {
-            background: transparent;
-            border-bottom: 1px solid #e9ecef;
-            padding: 15px 20px;
-        }
-        
-        /* Badges de estado */
-        .badge-pendiente { background-color: #6c757d; }
-        .badge-confirmado { background-color: #0d6efd; }
-        .badge-en_progreso { background-color: #ffc107; color: #000; }
-        .badge-finalizado { background-color: #198754; }
-        .badge-cancelado { background-color: #dc3545; }
-        .badge-pendiente_pago { background-color: #dc3545; }
-        .badge-pagado { background-color: #198754; }
-        
+        /* ============================================ */
+        /* BADGES Y ROLES */
+        /* ============================================ */
         .role-badge {
             font-size: 0.65rem;
             padding: 3px 10px;
             border-radius: 20px;
             margin-left: 5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .role-badge.admin { background: #dc3545; color: white; }
-        .role-badge.recepcionista { background: #0d6efd; color: white; }
-        .role-badge.chofer { background: #ffc107; color: #000; }
+        .role-badge.admin { background: #ef4444; color: white; }
+        .role-badge.recepcionista { background: #3b82f6; color: white; }
+        .role-badge.chofer { background: #f59e0b; color: #000; }
         
-        /* Mapa */
         #mapa {
             height: 350px;
-            border-radius: 8px;
-            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
             z-index: 1;
             width: 100%;
         }
         
-        .leaflet-routing-container {
-            display: none !important;
-        }
+        .leaflet-routing-container { display: none !important; }
         
-        /* Scroll personalizado */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #c1c7cd;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a8aeb4;
-        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-body); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
         /* ============================================ */
         /* 📱 ESTILOS ESPECÍFICOS PARA MÓVIL */
         /* ============================================ */
         @media (max-width: 768px) {
-            /* Ajustes generales */
-            body {
-                font-size: 14px;
-            }
+            body { font-size: 14px; }
+            .navbar { padding: 8px 10px !important; }
+            .navbar-brand { font-size: 1.1rem !important; }
             
-            /* Navbar más compacto */
-            .navbar {
-                padding: 8px 10px !important;
-            }
-            
-            .navbar-brand {
-                font-size: 1.1rem !important;
-            }
-            
-            /* Sidebar se convierte en barra superior */
             .sidebar {
                 min-height: auto !important;
                 border-right: none !important;
-                border-bottom: 1px solid #e9ecef;
+                border-bottom: 1px solid var(--border-color);
                 padding: 5px 10px !important;
-                background: white;
+                background: var(--bg-sidebar);
                 width: 100% !important;
                 position: sticky !important;
                 top: 0 !important;
                 z-index: 999 !important;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+                box-shadow: 0 2px 4px var(--shadow-color);
             }
             
-            /* Botón toggle del menú móvil */
             .sidebar-toggle-mobile {
                 display: flex !important;
                 align-items: center;
@@ -215,40 +328,29 @@
                 padding: 8px 5px;
                 background: transparent;
                 border: none;
-                color: #0d6efd;
-                font-weight: 600;
+                color: var(--primary-color);
+                font-weight: 700;
                 cursor: pointer;
             }
             
-            .sidebar-toggle-mobile i {
-                font-size: 1.2rem;
-            }
+            .sidebar-toggle-mobile i { font-size: 1.2rem; }
             
-            /* Menú colapsado en móvil */
             .sidebar-menu-mobile {
                 display: none;
                 padding: 10px 0;
-                background: white;
+                background: var(--bg-sidebar);
             }
-            
-            .sidebar-menu-mobile.show {
-                display: block;
-            }
+            .sidebar-menu-mobile.show { display: block; }
             
             .sidebar .nav-link {
                 padding: 10px 12px !important;
                 margin: 2px 0 !important;
                 font-size: 13px !important;
                 white-space: normal !important;
-                border-radius: 6px;
+                border-radius: 8px;
             }
+            .sidebar .nav-link i { width: 20px; font-size: 0.9rem; }
             
-            .sidebar .nav-link i {
-                width: 20px;
-                font-size: 0.9rem;
-            }
-            
-            /* Contenido principal ocupa todo el ancho */
             #contenidoPrincipal {
                 padding: 10px 12px !important;
                 width: 100% !important;
@@ -256,177 +358,55 @@
                 max-width: 100% !important;
             }
             
-            /* Tarjetas más compactas */
-            .card {
-                margin-bottom: 12px !important;
-                border-radius: 10px !important;
-            }
+            .card { margin-bottom: 12px !important; border-radius: 12px !important; }
+            .card-header { padding: 12px 15px !important; font-size: 0.95rem !important; }
+            .card-body { padding: 15px !important; }
             
-            .card-header {
-                padding: 12px 15px !important;
-                font-size: 0.95rem !important;
-            }
+            .table-responsive { font-size: 12px !important; }
+            .table-responsive table { min-width: 600px; }
             
-            .card-body {
-                padding: 12px 15px !important;
-            }
+            .btn { font-size: 12px !important; padding: 6px 12px !important; border-radius: 8px !important; font-weight: 600; }
+            .btn i { font-size: 0.85rem !important; }
             
-            /* Tablas responsivas */
-            .table-responsive {
-                font-size: 12px !important;
-            }
+            .form-control, .form-select { font-size: 14px !important; padding: 8px 12px !important; border-radius: 8px !important; }
+            .form-label { font-size: 13px !important; margin-bottom: 4px !important; font-weight: 600; }
             
-            .table-responsive table {
-                min-width: 600px;
-            }
+            #mapa { height: 250px !important; }
+            .badge { font-size: 0.7rem !important; padding: 4px 8px !important; }
             
-            /* Botones más pequeños en móvil */
-            .btn {
-                font-size: 12px !important;
-                padding: 5px 10px !important;
-                border-radius: 6px !important;
-            }
+            .modal-dialog { margin: 10px !important; }
+            .modal-content { border-radius: 14px !important; }
+            .alert { padding: 12px 15px !important; font-size: 13px !important; margin-bottom: 10px !important; border-radius: 10px; }
             
-            .btn i {
-                font-size: 0.85rem !important;
-            }
-            
-            /* Formularios en móvil */
-            .form-control, .form-select {
-                font-size: 14px !important;
-                padding: 8px 10px !important;
-            }
-            
-            .form-label {
-                font-size: 13px !important;
-                margin-bottom: 4px !important;
-            }
-            
-            /* Mapa más pequeño */
-            #mapa {
-                height: 250px !important;
-            }
-            
-            /* Badges más pequeños */
-            .badge {
-                font-size: 0.7rem !important;
-                padding: 4px 8px !important;
-            }
-            
-            /* Modales en móvil */
-            .modal-dialog {
-                margin: 10px !important;
-            }
-            
-            .modal-content {
-                border-radius: 12px !important;
-            }
-            
-            /* Alertas */
-            .alert {
-                padding: 10px 12px !important;
-                font-size: 13px !important;
-                margin-bottom: 10px !important;
-            }
-            
-            /* Ocultar elementos innecesarios en móvil */
-            .hide-mobile {
-                display: none !important;
-            }
-            
-            /* Mostrar elementos específicos para móvil */
-            .show-mobile {
-                display: block !important;
-            }
+            .hide-mobile { display: none !important; }
+            .show-mobile { display: block !important; }
         }
         
-        /* ============================================ */
-        /* 📱 ESTILOS PARA MÓVILES MUY PEQUEÑOS */
-        /* ============================================ */
         @media (max-width: 576px) {
-            #contenidoPrincipal {
-                padding: 8px 8px !important;
-            }
-            
-            .navbar-brand {
-                font-size: 1rem !important;
-            }
-            
-            .sidebar .nav-link {
-                font-size: 12px !important;
-                padding: 8px 10px !important;
-            }
-            
-            .card-header {
-                padding: 10px 12px !important;
-                font-size: 0.85rem !important;
-            }
-            
-            .card-body {
-                padding: 10px 12px !important;
-            }
-            
-            .btn {
-                font-size: 11px !important;
-                padding: 4px 8px !important;
-            }
-            
-            .form-control, .form-select {
-                font-size: 13px !important;
-                padding: 6px 8px !important;
-            }
-            
-            #mapa {
-                height: 200px !important;
-            }
-            
-            .modal-dialog {
-                margin: 5px !important;
-            }
-            
-            /* Grid en móvil: 1 columna */
-            .row-cols-1-mobile > * {
-                flex: 0 0 100% !important;
-                max-width: 100% !important;
-            }
+            #contenidoPrincipal { padding: 8px 8px !important; }
+            .navbar-brand { font-size: 1rem !important; }
+            .sidebar .nav-link { font-size: 12px !important; padding: 8px 10px !important; }
+            .card-header { padding: 10px 12px !important; font-size: 0.85rem !important; }
+            .card-body { padding: 12px !important; }
+            .btn { font-size: 11px !important; padding: 5px 10px !important; }
+            .form-control, .form-select { font-size: 13px !important; padding: 6px 10px !important; }
+            #mapa { height: 200px !important; }
+            .modal-dialog { margin: 5px !important; }
+            .row-cols-1-mobile > * { flex: 0 0 100% !important; max-width: 100% !important; }
         }
         
-        /* ============================================ */
-        /* 📱 ESTILOS PARA TABLETS */
-        /* ============================================ */
         @media (min-width: 769px) and (max-width: 1024px) {
-            .sidebar .nav-link {
-                font-size: 13px !important;
-                padding: 8px 15px !important;
-            }
-            
-            #contenidoPrincipal {
-                padding: 15px !important;
-            }
-            
-            .card-header {
-                padding: 12px 18px !important;
-            }
+            .sidebar .nav-link { font-size: 13px !important; padding: 10px 15px !important; }
+            #contenidoPrincipal { padding: 20px !important; }
+            .card-header { padding: 15px 20px !important; }
         }
         
-        /* ============================================ */
-        /* CLASES UTILITARIAS PARA MÓVIL */
-        /* ============================================ */
-        .show-mobile {
-            display: none !important;
-        }
-        
-        .hide-mobile {
-            display: block !important;
-        }
+        .show-mobile { display: none !important; }
+        .hide-mobile { display: block !important; }
         
         @media (max-width: 768px) {
-            .show-mobile {
-                display: block !important;
-            }
-            .hide-mobile {
-                display: none !important;
-            }
+            .show-mobile { display: block !important; }
+            .hide-mobile { display: none !important; }
         }
 
         /* ============================================ */
@@ -434,17 +414,17 @@
         /* ============================================ */
         .theme-toggle-btn {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 25px;
+            right: 25px;
             z-index: 1050;
-            width: 50px;
-            height: 50px;
+            width: 55px;
+            height: 55px;
             border-radius: 50%;
             border: none;
-            background: #0d6efd;
+            background: var(--primary-color);
             color: white;
-            font-size: 1.4rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 1.5rem;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.25);
             transition: all 0.3s ease;
             cursor: pointer;
             display: flex;
@@ -453,22 +433,23 @@
         }
 
         .theme-toggle-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.35);
         }
 
         .theme-picker-dropdown {
             position: fixed;
-            bottom: 80px;
-            right: 20px;
+            bottom: 90px;
+            right: 25px;
             z-index: 1050;
-            background: white;
-            border-radius: 12px;
-            padding: 12px 0;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            background: var(--bg-card);
+            border-radius: 14px;
+            padding: 10px 0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
             display: none;
-            min-width: 200px;
+            min-width: 220px;
             overflow: hidden;
+            border: 1px solid var(--border-color);
         }
 
         .theme-picker-dropdown.show {
@@ -485,7 +466,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 10px 20px;
+            padding: 12px 20px;
             cursor: pointer;
             transition: background 0.2s ease;
             border: none;
@@ -493,443 +474,168 @@
             width: 100%;
             text-align: left;
             font-size: 0.9rem;
-            color: #333;
-        }
-
-        .theme-option:hover {
-            background: #f0f7ff;
-        }
-
-        .theme-option .color-circle {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            border: 2px solid #e9ecef;
-            flex-shrink: 0;
-        }
-
-        .theme-option .theme-name {
+            color: var(--text-primary);
             font-weight: 500;
         }
 
+        .theme-option:hover {
+            background: var(--sidebar-hover-bg);
+        }
+
+        .theme-option .color-circle {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .theme-option .theme-name {
+            font-weight: 600;
+        }
+
         /* ============================================ */
-        /* TEMAS DE COLOR (THEMES) */
+        /* PALETAS DE COLORES PROFESIONALES (5 Tonos)  */
         /* ============================================ */
 
-        /* --- TEMA OSCURO (Dark) --- */
+        /* --- TEMA OSCURO (Slate) --- */
         body.theme-dark {
-            background: #1a1a2e;
-            color: #e0e0e0;
+            --bg-body: #0f172a;          /* Slate 900 */
+            --bg-card: #1e293b;          /* Slate 800 */
+            --bg-navbar: #1e293b;
+            --bg-sidebar: #1e293b;
+            --text-primary: #f8fafc;     /* Slate 50 */
+            --text-secondary: #cbd5e1;   /* Slate 300 */
+            --text-muted: #94a3b8;       /* Slate 400 */
+            --border-color: #334155;     /* Slate 700 */
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --primary-color: #3b82f6;    /* Blue 500 */
+            --primary-hover: #60a5fa;    /* Blue 400 */
+            --sidebar-active-bg: #2563eb;
+            --sidebar-active-text: #ffffff;
+            --sidebar-hover-bg: #334155;
+            --sidebar-hover-text: #60a5fa;
         }
-
-        body.theme-dark .navbar,
-        body.theme-dark .sidebar,
-        body.theme-dark .card,
-        body.theme-dark .modal-content,
-        body.theme-dark .theme-picker-dropdown,
-        body.theme-dark .dropdown-menu {
-            background: #16213e !important;
-            border-color: #2a3a5e !important;
-            color: #e0e0e0 !important;
+        body.theme-dark .card-header { border-bottom-color: #334155 !important; }
+        body.theme-dark .form-control, body.theme-dark .form-select {
+            background: #0f172a !important; border-color: #334155 !important; color: #f8fafc !important;
         }
-
-        body.theme-dark .navbar-brand {
-            color: #4fc3f7 !important;
+        body.theme-dark .form-control:focus, body.theme-dark .form-select:focus {
+            border-color: #3b82f6 !important; box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
         }
-
-        body.theme-dark .sidebar .nav-link {
-            color: #b0bec5 !important;
-        }
-
-        body.theme-dark .sidebar .nav-link:hover {
-            background: #1a2a4a !important;
-            color: #4fc3f7 !important;
-        }
-
-        body.theme-dark .sidebar .nav-link.active {
-            background: #0d47a1 !important;
-            color: white !important;
-        }
-
-        body.theme-dark .card-header {
-            border-bottom-color: #2a3a5e !important;
-        }
-
-        body.theme-dark .form-control,
-        body.theme-dark .form-select {
-            background: #1a2a4a !important;
-            border-color: #2a3a5e !important;
-            color: #e0e0e0 !important;
-        }
-
-        body.theme-dark .form-control:focus,
-        body.theme-dark .form-select:focus {
-            background: #1a2a4a !important;
-            border-color: #4fc3f7 !important;
-            box-shadow: 0 0 0 0.25rem rgba(79, 195, 247, 0.25);
-        }
-
-        body.theme-dark .table {
-            color: #e0e0e0 !important;
-        }
-
+        body.theme-dark .table { color: #cbd5e1 !important; }
         body.theme-dark .table-striped > tbody > tr:nth-of-type(odd) > * {
-            background-color: rgba(255,255,255,0.03);
+            background-color: rgba(255,255,255,0.03); color: #cbd5e1 !important;
         }
+        body.theme-dark .alert-success { background: #064e3b; border-color: #065f46; color: #6ee7b7; }
+        body.theme-dark .alert-danger { background: #7f1d1d; border-color: #991b1b; color: #fca5a5; }
+        body.theme-dark .alert-info { background: #1e3a8a; border-color: #1e40af; color: #93c5fd; }
+        body.theme-dark .btn-close { filter: invert(1); }
+        body.theme-dark .dropdown-menu { background: #1e293b; border-color: #334155; }
+        body.theme-dark .dropdown-menu .dropdown-item { color: #cbd5e1 !important; }
+        body.theme-dark .dropdown-menu .dropdown-item:hover { background: #334155 !important; }
 
-        body.theme-dark .text-muted {
-            color: #90a4ae !important;
-        }
-
-        body.theme-dark .alert-success {
-            background: #1b5e20;
-            border-color: #2e7d32;
-            color: #a5d6a7;
-        }
-
-        body.theme-dark .alert-danger {
-            background: #b71c1c;
-            border-color: #c62828;
-            color: #ef9a9a;
-        }
-
-        body.theme-dark .alert-info {
-            background: #0d47a1;
-            border-color: #1565c0;
-            color: #90caf9;
-        }
-
-        body.theme-dark .btn-close {
-            filter: invert(1);
-        }
-
-        body.theme-dark .theme-toggle-btn {
-            background: #0d47a1;
-        }
-
-        body.theme-dark .dropdown-menu .dropdown-item {
-            color: #e0e0e0 !important;
-        }
-
-        body.theme-dark .dropdown-menu .dropdown-item:hover {
-            background: #1a2a4a !important;
-        }
-
-        body.theme-dark .role-badge.admin {
-            background: #c62828;
-        }
-
-        body.theme-dark .role-badge.recepcionista {
-            background: #0d47a1;
-        }
-
-        body.theme-dark .role-badge.chofer {
-            background: #f9a825;
-            color: #000;
-        }
-
-        body.theme-dark .sidebar .nav-link.vehicle-map {
-            background: linear-gradient(135deg, #0d47a1, #1a237e);
-            border-left-color: #4fc3f7;
-        }
-
-        body.theme-dark .sidebar .nav-link.vehicle-map i.fa-truck {
-            color: #4fc3f7;
-        }
-
-        body.theme-dark .sidebar .nav-link.vehicle-map.active {
-            background: #0d47a1;
-            color: white;
-        }
-
-        body.theme-dark .sidebar .nav-link.vehicle-map.active i.fa-truck {
-            color: white;
-        }
-
-        body.theme-dark #mapa {
-            border-color: #2a3a5e;
-        }
-
-        /* --- TEMA AZUL (Blue) --- */
+        /* --- TEMA AZUL (Sky) --- */
         body.theme-blue {
-            background: #e3f2fd;
+            --bg-body: #f0f9ff;          /* Sky 50 */
+            --bg-card: #ffffff;
+            --bg-navbar: #ffffff;
+            --bg-sidebar: #ffffff;
+            --text-primary: #0c4a6e;     /* Sky 900 */
+            --text-secondary: #075985;   /* Sky 800 */
+            --text-muted: #0284c7;       /* Sky 600 */
+            --border-color: #bae6fd;     /* Sky 200 */
+            --shadow-color: rgba(12, 74, 110, 0.08);
+            --primary-color: #0ea5e9;    /* Sky 500 */
+            --primary-hover: #0284c7;    /* Sky 600 */
+            --sidebar-active-bg: #0ea5e9;
+            --sidebar-active-text: #ffffff;
+            --sidebar-hover-bg: #e0f2fe; /* Sky 100 */
+            --sidebar-hover-text: #0284c7;
         }
 
-        body.theme-blue .navbar,
-        body.theme-blue .sidebar,
-        body.theme-blue .card,
-        body.theme-blue .modal-content,
-        body.theme-blue .theme-picker-dropdown,
-        body.theme-blue .dropdown-menu {
-            background: #ffffff !important;
-            border-color: #90caf9 !important;
-        }
-
-        body.theme-blue .navbar-brand {
-            color: #0d47a1 !important;
-        }
-
-        body.theme-blue .sidebar .nav-link {
-            color: #0d47a1 !important;
-        }
-
-        body.theme-blue .sidebar .nav-link:hover {
-            background: #bbdefb !important;
-        }
-
-        body.theme-blue .sidebar .nav-link.active {
-            background: #0d47a1 !important;
-            color: white !important;
-        }
-
-        body.theme-blue .card-header {
-            border-bottom-color: #90caf9 !important;
-        }
-
-        body.theme-blue .form-control:focus,
-        body.theme-blue .form-select:focus {
-            border-color: #0d47a1 !important;
-            box-shadow: 0 0 0 0.25rem rgba(13, 71, 161, 0.25);
-        }
-
-        body.theme-blue .theme-toggle-btn {
-            background: #0d47a1;
-        }
-
-        body.theme-blue .sidebar .nav-link.vehicle-map {
-            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-            border-left-color: #0d47a1;
-        }
-
-        /* --- TEMA VERDE (Green) --- */
+        /* --- TEMA VERDE (Emerald) --- */
         body.theme-green {
-            background: #e8f5e9;
+            --bg-body: #ecfdf5;          /* Emerald 50 */
+            --bg-card: #ffffff;
+            --bg-navbar: #ffffff;
+            --bg-sidebar: #ffffff;
+            --text-primary: #064e3b;     /* Emerald 900 */
+            --text-secondary: #065f46;   /* Emerald 800 */
+            --text-muted: #059669;       /* Emerald 600 */
+            --border-color: #a7f3d0;     /* Emerald 200 */
+            --shadow-color: rgba(6, 78, 59, 0.08);
+            --primary-color: #10b981;    /* Emerald 500 */
+            --primary-hover: #059669;    /* Emerald 600 */
+            --sidebar-active-bg: #10b981;
+            --sidebar-active-text: #ffffff;
+            --sidebar-hover-bg: #d1fae5; /* Emerald 100 */
+            --sidebar-hover-text: #059669;
         }
 
-        body.theme-green .navbar,
-        body.theme-green .sidebar,
-        body.theme-green .card,
-        body.theme-green .modal-content,
-        body.theme-green .theme-picker-dropdown,
-        body.theme-green .dropdown-menu {
-            background: #ffffff !important;
-            border-color: #a5d6a7 !important;
-        }
-
-        body.theme-green .navbar-brand {
-            color: #1b5e20 !important;
-        }
-
-        body.theme-green .sidebar .nav-link {
-            color: #1b5e20 !important;
-        }
-
-        body.theme-green .sidebar .nav-link:hover {
-            background: #c8e6c9 !important;
-        }
-
-        body.theme-green .sidebar .nav-link.active {
-            background: #1b5e20 !important;
-            color: white !important;
-        }
-
-        body.theme-green .card-header {
-            border-bottom-color: #a5d6a7 !important;
-        }
-
-        body.theme-green .form-control:focus,
-        body.theme-green .form-select:focus {
-            border-color: #1b5e20 !important;
-            box-shadow: 0 0 0 0.25rem rgba(27, 94, 32, 0.25);
-        }
-
-        body.theme-green .theme-toggle-btn {
-            background: #1b5e20;
-        }
-
-        body.theme-green .sidebar .nav-link.vehicle-map {
-            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-            border-left-color: #1b5e20;
-        }
-
-        /* --- TEMA MORADO (Purple) --- */
+        /* --- TEMA MORADO (Violet) --- */
         body.theme-purple {
-            background: #f3e5f5;
+            --bg-body: #f5f3ff;          /* Violet 50 */
+            --bg-card: #ffffff;
+            --bg-navbar: #ffffff;
+            --bg-sidebar: #ffffff;
+            --text-primary: #2e1065;     /* Violet 900 */
+            --text-secondary: #4c1d95;   /* Violet 800 */
+            --text-muted: #7c3aed;       /* Violet 600 */
+            --border-color: #ddd6fe;     /* Violet 200 */
+            --shadow-color: rgba(46, 16, 101, 0.08);
+            --primary-color: #8b5cf6;    /* Violet 500 */
+            --primary-hover: #7c3aed;    /* Violet 600 */
+            --sidebar-active-bg: #8b5cf6;
+            --sidebar-active-text: #ffffff;
+            --sidebar-hover-bg: #ede9fe; /* Violet 100 */
+            --sidebar-hover-text: #7c3aed;
         }
 
-        body.theme-purple .navbar,
-        body.theme-purple .sidebar,
-        body.theme-purple .card,
-        body.theme-purple .modal-content,
-        body.theme-purple .theme-picker-dropdown,
-        body.theme-purple .dropdown-menu {
-            background: #ffffff !important;
-            border-color: #ce93d8 !important;
-        }
-
-        body.theme-purple .navbar-brand {
-            color: #4a148c !important;
-        }
-
-        body.theme-purple .sidebar .nav-link {
-            color: #4a148c !important;
-        }
-
-        body.theme-purple .sidebar .nav-link:hover {
-            background: #e1bee7 !important;
-        }
-
-        body.theme-purple .sidebar .nav-link.active {
-            background: #4a148c !important;
-            color: white !important;
-        }
-
-        body.theme-purple .card-header {
-            border-bottom-color: #ce93d8 !important;
-        }
-
-        body.theme-purple .form-control:focus,
-        body.theme-purple .form-select:focus {
-            border-color: #4a148c !important;
-            box-shadow: 0 0 0 0.25rem rgba(74, 20, 140, 0.25);
-        }
-
-        body.theme-purple .theme-toggle-btn {
-            background: #4a148c;
-        }
-
-        body.theme-purple .sidebar .nav-link.vehicle-map {
-            background: linear-gradient(135deg, #f3e5f5, #e1bee7);
-            border-left-color: #4a148c;
-        }
-
-        /* --- TEMA ROJO (Red) --- */
+        /* --- TEMA ROJO (Rose) --- */
         body.theme-red {
-            background: #ffebee;
+            --bg-body: #fff1f2;          /* Rose 50 */
+            --bg-card: #ffffff;
+            --bg-navbar: #ffffff;
+            --bg-sidebar: #ffffff;
+            --text-primary: #881337;     /* Rose 900 */
+            --text-secondary: #9f1239;   /* Rose 800 */
+            --text-muted: #e11d48;       /* Rose 600 */
+            --border-color: #fecdd3;     /* Rose 200 */
+            --shadow-color: rgba(136, 19, 55, 0.08);
+            --primary-color: #f43f5e;    /* Rose 500 */
+            --primary-hover: #e11d48;    /* Rose 600 */
+            --sidebar-active-bg: #f43f5e;
+            --sidebar-active-text: #ffffff;
+            --sidebar-hover-bg: #ffe4e6; /* Rose 100 */
+            --sidebar-hover-text: #e11d48;
         }
 
-        body.theme-red .navbar,
-        body.theme-red .sidebar,
-        body.theme-red .card,
-        body.theme-red .modal-content,
-        body.theme-red .theme-picker-dropdown,
-        body.theme-red .dropdown-menu {
-            background: #ffffff !important;
-            border-color: #ef9a9a !important;
-        }
-
-        body.theme-red .navbar-brand {
-            color: #b71c1c !important;
-        }
-
-        body.theme-red .sidebar .nav-link {
-            color: #b71c1c !important;
-        }
-
-        body.theme-red .sidebar .nav-link:hover {
-            background: #ffcdd2 !important;
-        }
-
-        body.theme-red .sidebar .nav-link.active {
-            background: #b71c1c !important;
-            color: white !important;
-        }
-
-        body.theme-red .card-header {
-            border-bottom-color: #ef9a9a !important;
-        }
-
-        body.theme-red .form-control:focus,
-        body.theme-red .form-select:focus {
-            border-color: #b71c1c !important;
-            box-shadow: 0 0 0 0.25rem rgba(183, 28, 28, 0.25);
-        }
-
-        body.theme-red .theme-toggle-btn {
-            background: #b71c1c;
-        }
-
-        body.theme-red .sidebar .nav-link.vehicle-map {
-            background: linear-gradient(135deg, #ffebee, #ffcdd2);
-            border-left-color: #b71c1c;
-        }
-
-        /* --- TEMA AMARILLO (Yellow) --- */
+        /* --- TEMA AMARILLO (Amber) --- */
         body.theme-yellow {
-            background: #fffde7;
+            --bg-body: #fffbeb;          /* Amber 50 */
+            --bg-card: #ffffff;
+            --bg-navbar: #ffffff;
+            --bg-sidebar: #ffffff;
+            --text-primary: #78350f;     /* Amber 900 */
+            --text-secondary: #92400e;   /* Amber 800 */
+            --text-muted: #d97706;       /* Amber 600 */
+            --border-color: #fde68a;     /* Amber 200 */
+            --shadow-color: rgba(120, 53, 15, 0.08);
+            --primary-color: #f59e0b;    /* Amber 500 */
+            --primary-hover: #d97706;    /* Amber 600 */
+            --sidebar-active-bg: #f59e0b;
+            --sidebar-active-text: #ffffff;
+            --sidebar-hover-bg: #fef3c7; /* Amber 100 */
+            --sidebar-hover-text: #d97706;
         }
 
-        body.theme-yellow .navbar,
-        body.theme-yellow .sidebar,
-        body.theme-yellow .card,
-        body.theme-yellow .modal-content,
-        body.theme-yellow .theme-picker-dropdown,
-        body.theme-yellow .dropdown-menu {
-            background: #ffffff !important;
-            border-color: #ffe082 !important;
-        }
-
-        body.theme-yellow .navbar-brand {
-            color: #f57f17 !important;
-        }
-
-        body.theme-yellow .sidebar .nav-link {
-            color: #f57f17 !important;
-        }
-
-        body.theme-yellow .sidebar .nav-link:hover {
-            background: #ffecb3 !important;
-        }
-
-        body.theme-yellow .sidebar .nav-link.active {
-            background: #f57f17 !important;
-            color: white !important;
-        }
-
-        body.theme-yellow .card-header {
-            border-bottom-color: #ffe082 !important;
-        }
-
-        body.theme-yellow .form-control:focus,
-        body.theme-yellow .form-select:focus {
-            border-color: #f57f17 !important;
-            box-shadow: 0 0 0 0.25rem rgba(245, 127, 23, 0.25);
-        }
-
-        body.theme-yellow .theme-toggle-btn {
-            background: #f57f17;
-        }
-
-        body.theme-yellow .sidebar .nav-link.vehicle-map {
-            background: linear-gradient(135deg, #fffde7, #ffecb3);
-            border-left-color: #f57f17;
-        }
-
-        /* Ajustes para móvil en temas */
         @media (max-width: 768px) {
-            .theme-toggle-btn {
-                width: 44px;
-                height: 44px;
-                font-size: 1.2rem;
-                bottom: 15px;
-                right: 15px;
-            }
-
-            .theme-picker-dropdown {
-                bottom: 70px;
-                right: 15px;
-                min-width: 170px;
-            }
-
-            .theme-option {
-                padding: 8px 16px;
-                font-size: 0.8rem;
-            }
-
-            .theme-option .color-circle {
-                width: 20px;
-                height: 20px;
-            }
+            .theme-toggle-btn { width: 48px; height: 48px; font-size: 1.2rem; bottom: 15px; right: 15px; }
+            .theme-picker-dropdown { bottom: 75px; right: 15px; min-width: 190px; }
+            .theme-option { padding: 10px 16px; font-size: 0.85rem; }
+            .theme-option .color-circle { width: 22px; height: 22px; }
         }
     </style>
 </head>
@@ -937,13 +643,12 @@
     <!-- ============================================ -->
     <!-- NAVBAR -->
     <!-- ============================================ -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-light shadow-sm" style="background-color: var(--bg-navbar); border-bottom: 1px solid var(--border-color);">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ route('dashboard') }}">
                 <i class="fas fa-truck me-2"></i>MudaTrack
             </a>
             
-            <!-- Botón para abrir menú en móvil -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -952,7 +657,7 @@
                 <ul class="navbar-nav ms-auto">
                     @auth
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" style="color: var(--text-primary); font-weight: 600;">
                                 <i class="fas fa-user me-1"></i> {{ auth()->user()->name }}
                                 @if(auth()->user()->isAdmin())
                                     <span class="role-badge admin">Admin</span>
@@ -962,9 +667,9 @@
                                     <span class="role-badge chofer">Chofer</span>
                                 @endif
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
+                            <ul class="dropdown-menu dropdown-menu-end" style="background-color: var(--bg-card); border-color: var(--border-color); box-shadow: 0 10px 30px var(--shadow-color);">
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('2fa.setup') }}">
+                                    <a class="dropdown-item" href="{{ route('2fa.setup') }}" style="color: var(--text-secondary);">
                                         <i class="fas fa-shield-alt me-2"></i>
                                         @if(auth()->user()->google2fa_enabled)
                                             <span class="text-success">🔒 2FA Activado</span>
@@ -973,9 +678,9 @@
                                         @endif
                                     </a>
                                 </li>
-                                <li><hr class="dropdown-divider"></li>
+                                <li><hr class="dropdown-divider" style="border-color: var(--border-color);"></li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('logout') }}" 
+                                    <a class="dropdown-item" href="{{ route('logout') }}" style="color: var(--text-secondary);"
                                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                         <i class="fas fa-sign-out-alt me-2"></i> Cerrar sesión
                                     </a>
@@ -996,42 +701,45 @@
     <!-- ============================================ -->
     <div class="container-fluid">
         <div class="row">
-            <!-- SIDEBAR CON DETECCIÓN MÓVIL -->
-            <div class="col-md-2 sidebar" id="sidebarPrincipal">
-                <!-- Botón toggle para móvil -->
+            <!-- SIDEBAR -->
+            <div class="col-lg-3 col-md-4 sidebar" id="sidebarPrincipal">
                 <button class="sidebar-toggle-mobile d-md-none" type="button" id="btnToggleMenu">
                     <span><i class="fas fa-bars me-2"></i> Menú</span>
                     <i class="fas fa-chevron-down" id="iconToggle"></i>
                 </button>
                 
-                <!-- Menú (visible en PC, colapsado en móvil) -->
                 <div class="sidebar-menu-mobile d-md-block" id="menuMobile">
                     <ul class="nav flex-column">
-                        <!-- DASHBOARD -->
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" 
                                href="{{ route('dashboard') }}">
                                 <i class="fas fa-chart-pie"></i> Dashboard
                             </a>
                         </li>
-
-                        <!-- CLIENTES -->
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('clientes.*') ? 'active' : '' }}" 
                                href="{{ route('clientes.index') }}">
                                 <i class="fas fa-users"></i> Clientes
                             </a>
                         </li>
-
-                        <!-- SERVICIOS -->
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('servicios.*') ? 'active' : '' }}" 
                                href="{{ route('servicios.index') }}">
                                 <i class="fas fa-tasks"></i> Servicios
                             </a>
                         </li>
-
-                        <!-- 2FA -->
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('calendario.*') ? 'active' : '' }}" 
+                               href="{{ route('calendario.index') }}">
+                                <i class="fas fa-calendar-alt"></i> Calendario
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('dispositivos.*') ? 'active' : '' }}" 
+                               href="{{ route('dispositivos.index') }}">
+                                <i class="fas fa-satellite-dish"></i> Dispositivos GPS
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('2fa.*') ? 'active' : '' }} 
                                        @if(auth()->user()->google2fa_enabled) twofa-active @else twofa-inactive @endif" 
@@ -1044,10 +752,6 @@
                                 @endif
                             </a>
                         </li>
-
-                        <!-- ============================================ -->
-                        <!-- SECCIÓN ADMIN -->
-                        <!-- ============================================ -->
                         @if(auth()->user()->isAdmin())
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('choferes.*') ? 'active' : '' }}" 
@@ -1080,10 +784,6 @@
                             </a>
                         </li>
                         @endif
-
-                        <!-- ============================================ -->
-                        <!-- SECCIÓN ADMIN Y RECEPCIONISTA -->
-                        <!-- ============================================ -->
                         @if(auth()->user()->hasAnyRole(['admin', 'recepcionista']))
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('gps.index') ? 'active' : '' }}" 
@@ -1091,8 +791,6 @@
                                 <i class="fas fa-map-marked-alt"></i> Seguimiento GPS
                             </a>
                         </li>
-                        
-                        <!-- MAPA DE VEHÍCULOS (SOLO ADMIN) -->
                         @if(auth()->user()->isAdmin())
                         <li class="nav-item">
                             <a class="nav-link vehicle-map {{ request()->routeIs('gps.admin.mapa') ? 'active' : '' }}" 
@@ -1103,7 +801,6 @@
                             </a>
                         </li>
                         @endif
-                        
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('reportes.*') ? 'active' : '' }}" 
                                href="{{ route('reportes.index') }}">
@@ -1116,8 +813,7 @@
             </div>
 
             <!-- CONTENIDO PRINCIPAL -->
-            <div class="col-md-10 col-12" id="contenidoPrincipal">
-                <!-- Mensajes de éxito/error -->
+            <div class="col-lg-9 col-md-8 col-12" id="contenidoPrincipal">
                 @if(session('success'))
                     <div class="alert alert-success alert-dismissible fade show">
                         <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
@@ -1139,56 +835,59 @@
                     </div>
                 @endif
 
-                <!-- Contenido de la vista -->
                 @yield('content')
             </div>
         </div>
     </div>
 
-    <!-- ============================================ -->
-    <!-- BOTÓN Y SELECTOR DE TEMAS -->
-    <!-- ============================================ -->
+    <!-- THEME TOGGLE -->
     <button class="theme-toggle-btn" id="themeToggleBtn" title="Cambiar tema">
         <i class="fas fa-palette"></i>
     </button>
 
     <div class="theme-picker-dropdown" id="themePicker">
         <button class="theme-option" data-theme="default">
-            <span class="color-circle" style="background: #f4f6f9; border-color: #0d6efd;"></span>
+            <span class="color-circle" style="background: #f8fafc; border-color: #3b82f6;"></span>
             <span class="theme-name">🌞 Claro (Default)</span>
         </button>
         <button class="theme-option" data-theme="dark">
-            <span class="color-circle" style="background: #1a1a2e; border-color: #4fc3f7;"></span>
+            <span class="color-circle" style="background: #0f172a; border-color: #3b82f6;"></span>
             <span class="theme-name">🌙 Oscuro</span>
         </button>
         <button class="theme-option" data-theme="blue">
-            <span class="color-circle" style="background: #e3f2fd; border-color: #0d47a1;"></span>
+            <span class="color-circle" style="background: #f0f9ff; border-color: #0ea5e9;"></span>
             <span class="theme-name">🔵 Azul</span>
         </button>
         <button class="theme-option" data-theme="green">
-            <span class="color-circle" style="background: #e8f5e9; border-color: #1b5e20;"></span>
+            <span class="color-circle" style="background: #ecfdf5; border-color: #10b981;"></span>
             <span class="theme-name">🟢 Verde</span>
         </button>
         <button class="theme-option" data-theme="purple">
-            <span class="color-circle" style="background: #f3e5f5; border-color: #4a148c;"></span>
+            <span class="color-circle" style="background: #f5f3ff; border-color: #8b5cf6;"></span>
             <span class="theme-name">🟣 Morado</span>
         </button>
         <button class="theme-option" data-theme="red">
-            <span class="color-circle" style="background: #ffebee; border-color: #b71c1c;"></span>
+            <span class="color-circle" style="background: #fff1f2; border-color: #f43f5e;"></span>
             <span class="theme-name">🔴 Rojo</span>
         </button>
         <button class="theme-option" data-theme="yellow">
-            <span class="color-circle" style="background: #fffde7; border-color: #f57f17;"></span>
+            <span class="color-circle" style="background: #fffbeb; border-color: #f59e0b;"></span>
             <span class="theme-name">🟡 Amarillo</span>
         </button>
     </div>
 
     <!-- ============================================ -->
-    <!-- SCRIPTS -->
+    <!-- SCRIPTS - CARGADOS GLOBALMENTE -->
     <!-- ============================================ -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    
+    <!-- ============================================ -->
+    <!-- FULLCALENDAR JS - CARGADO GLOBALMENTE -->
+    <!-- ============================================ -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/es.min.js"></script>
     
     <!-- JavaScript para toggle del menú en móvil -->
     <script>
@@ -1205,7 +904,6 @@
                 });
             }
             
-            // Cerrar menú al hacer clic en un enlace (móvil)
             const navLinks = document.querySelectorAll('.sidebar .nav-link');
             navLinks.forEach(link => {
                 link.addEventListener('click', function() {
@@ -1226,50 +924,46 @@
             const themePicker = document.getElementById('themePicker');
             const themeOptions = document.querySelectorAll('.theme-option');
 
-            // Alternar visibilidad del selector
-            toggleBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                themePicker.classList.toggle('show');
-            });
-
-            // Cerrar selector al hacer clic fuera
-            document.addEventListener('click', function(e) {
-                if (!themePicker.contains(e.target) && e.target !== toggleBtn) {
-                    themePicker.classList.remove('show');
-                }
-            });
-
-            // Aplicar tema seleccionado
-            themeOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    const theme = this.dataset.theme;
-                    applyTheme(theme);
-                    themePicker.classList.remove('show');
-                    // Guardar preferencia en localStorage
-                    localStorage.setItem('mudatrack-theme', theme);
+            if(toggleBtn && themePicker) {
+                toggleBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    themePicker.classList.toggle('show');
                 });
-            });
 
-            // Función para aplicar tema
-            function applyTheme(theme) {
-                // Remover todas las clases de tema
-                document.body.classList.remove(
-                    'theme-dark', 'theme-blue', 'theme-green', 
-                    'theme-purple', 'theme-red', 'theme-yellow'
-                );
-                
-                if (theme !== 'default') {
-                    document.body.classList.add('theme-' + theme);
+                document.addEventListener('click', function(e) {
+                    if (!themePicker.contains(e.target) && e.target !== toggleBtn) {
+                        themePicker.classList.remove('show');
+                    }
+                });
+
+                themeOptions.forEach(option => {
+                    option.addEventListener('click', function() {
+                        const theme = this.dataset.theme;
+                        applyTheme(theme);
+                        themePicker.classList.remove('show');
+                        localStorage.setItem('mudatrack-theme', theme);
+                    });
+                });
+
+                function applyTheme(theme) {
+                    document.body.classList.remove(
+                        'theme-dark', 'theme-blue', 'theme-green', 
+                        'theme-purple', 'theme-red', 'theme-yellow'
+                    );
+                    
+                    if (theme !== 'default') {
+                        document.body.classList.add('theme-' + theme);
+                    }
                 }
-            }
 
-            // Cargar tema guardado
-            const savedTheme = localStorage.getItem('mudatrack-theme');
-            if (savedTheme && savedTheme !== 'default') {
-                applyTheme(savedTheme);
+                const savedTheme = localStorage.getItem('mudatrack-theme');
+                if (savedTheme && savedTheme !== 'default') {
+                    applyTheme(savedTheme);
+                }
             }
         });
     </script>
+    
     @stack('scripts')
 </body>
 </html>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Servicio;
 use App\Models\UbicacionGps;
 use App\Models\Vehiculo;
+use App\Models\Dispositivo;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use GuzzleHttp\Client;
@@ -16,9 +17,11 @@ class GpsController extends BaseController
 
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except([
+            'seguimientoPublico',
+            'ubicacionPublica'
+        ]);
         
-        // Inicializar cliente para Firebase
         $this->firebaseClient = new Client();
         $this->firebaseUrl = "https://firestore.googleapis.com/v1/projects/gps1-e12e5/databases/(default)/documents";
     }
@@ -31,7 +34,6 @@ class GpsController extends BaseController
         $query = Servicio::with(['cliente', 'chofer', 'vehiculo'])
             ->whereIn('estado', ['confirmado', 'en_progreso', 'pendiente']);
 
-        // FILTRO POR BÚSQUEDA
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -42,56 +44,56 @@ class GpsController extends BaseController
             });
         }
 
-        // FILTRO POR ESTADO
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
         }
 
-        // FILTRO POR FECHA
         if ($request->filled('fecha')) {
             $query->whereDate('fecha_servicio', $request->fecha);
         }
 
         $servicios = $query->orderBy('created_at', 'desc')->paginate(15);
         
-        // Obtener dispositivos activos desde Firebase
         $dispositivosFirebase = $this->getTodasUbicaciones();
 
         return view('gps.index', compact('servicios', 'dispositivosFirebase'));
     }
 
     /**
-     * Muestra el seguimiento GPS de un servicio con datos de Firebase
+     * Seguimiento GPS (privado, con login)
      */
     public function seguimiento($id)
     {
         $servicio = Servicio::with(['cliente', 'chofer', 'vehiculo'])->findOrFail($id);
         
-        // Verificar que el servicio esté activo
         if (!in_array($servicio->estado, ['confirmado', 'en_progreso', 'pendiente'])) {
             abort(404, 'Servicio no disponible para seguimiento');
         }
 
-        // Obtener ubicaciones GPS locales
         $ubicaciones = UbicacionGps::where('servicio_id', $servicio->id)
             ->orderBy('fecha_hora', 'asc')
             ->get();
 
-        // Última ubicación local
         $ultimaUbicacion = UbicacionGps::where('servicio_id', $servicio->id)
             ->orderBy('fecha_hora', 'desc')
             ->first();
 
-        // Obtener ubicación del chofer desde Firebase
         $ubicacionFirebase = null;
         $dispositivosFirebase = [];
+        $dispositivoAsignado = null;
 
         if ($servicio->chofer) {
-            // Buscar el dispositivo del chofer en Firebase
-            $ubicacionFirebase = $this->getUbicacionDispositivo($servicio->chofer->id);
-            
-            // Obtener todos los dispositivos activos
-            $dispositivosFirebase = $this->getTodasUbicaciones();
+            $dispositivoAsignado = Dispositivo::where('chofer_id', $servicio->chofer->id)
+                ->where('activo', true)
+                ->first();
+
+            if ($dispositivoAsignado) {
+                $ubicacionFirebase = $this->getUbicacionPorDispositivoId($dispositivoAsignado->dispositivo_id);
+                
+                if ($ubicacionFirebase) {
+                    $dispositivosFirebase = [$ubicacionFirebase];
+                }
+            }
         }
 
         return view('gps.seguimiento', compact(
@@ -99,12 +101,91 @@ class GpsController extends BaseController
             'ubicaciones', 
             'ultimaUbicacion',
             'ubicacionFirebase',
-            'dispositivosFirebase'
+            'dispositivosFirebase',
+            'dispositivoAsignado'
         ));
     }
 
     /**
-     * Actualiza la ubicación GPS (desde app móvil o web)
+     * 🔥 VISTA PÚBLICA DE SEGUIMIENTO (sin login)
+     */
+    public function seguimientoPublico($token)
+    {
+        $servicio = Servicio::where('token_seguimiento', $token)
+            ->with(['cliente', 'chofer', 'vehiculo'])
+            ->first();
+
+        if (!$servicio) {
+            abort(404, 'Enlace de seguimiento no válido o expirado');
+        }
+
+        if (!in_array($servicio->estado, ['confirmado', 'en_progreso', 'pendiente'])) {
+            return view('gps.seguimiento-publico-inactivo', compact('servicio'));
+        }
+
+        $ubicaciones = UbicacionGps::where('servicio_id', $servicio->id)
+            ->orderBy('fecha_hora', 'asc')
+            ->get();
+
+        $dispositivoAsignado = null;
+        $ubicacionFirebase = null;
+
+        if ($servicio->chofer) {
+            $dispositivoAsignado = Dispositivo::where('chofer_id', $servicio->chofer->id)
+                ->where('activo', true)
+                ->first();
+
+            if ($dispositivoAsignado) {
+                $ubicacionFirebase = $this->getUbicacionPorDispositivoId($dispositivoAsignado->dispositivo_id);
+            }
+        }
+
+        return view('gps.seguimiento-publico', compact(
+            'servicio',
+            'ubicaciones',
+            'dispositivoAsignado',
+            'ubicacionFirebase',
+            'token'
+        ));
+    }
+
+    /**
+     * 🔥 API PÚBLICA: Obtener ubicación por token (para AJAX)
+     */
+    public function ubicacionPublica($token)
+    {
+        $servicio = Servicio::where('token_seguimiento', $token)->first();
+
+        if (!$servicio) {
+            return response()->json(['success' => false, 'message' => 'Token inválido'], 404);
+        }
+
+        if (!$servicio->chofer) {
+            return response()->json(['success' => false, 'message' => 'Sin chofer asignado'], 404);
+        }
+
+        $dispositivo = Dispositivo::where('chofer_id', $servicio->chofer->id)
+            ->where('activo', true)
+            ->first();
+
+        if (!$dispositivo) {
+            return response()->json(['success' => false, 'message' => 'Sin dispositivo asignado'], 404);
+        }
+
+        $ubicacion = $this->getUbicacionPorDispositivoId($dispositivo->dispositivo_id);
+
+        if (!$ubicacion) {
+            return response()->json(['success' => false, 'message' => 'Sin ubicación disponible'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $ubicacion
+        ]);
+    }
+
+    /**
+     * Actualiza la ubicación GPS
      */
     public function actualizar(Request $request)
     {
@@ -131,21 +212,25 @@ class GpsController extends BaseController
     }
 
     /**
-     * Obtiene la última ubicación de un servicio
+     * Última ubicación de un servicio
      */
     public function ultimaUbicacion($id)
     {
         $servicio = Servicio::findOrFail($id);
         
-        // Buscar en BD local
         $ubicacionLocal = UbicacionGps::where('servicio_id', $servicio->id)
             ->orderBy('fecha_hora', 'desc')
             ->first();
 
-        // Buscar en Firebase
         $ubicacionFirebase = null;
         if ($servicio->chofer) {
-            $ubicacionFirebase = $this->getUbicacionDispositivo($servicio->chofer->id);
+            $dispositivo = Dispositivo::where('chofer_id', $servicio->chofer->id)
+                ->where('activo', true)
+                ->first();
+            
+            if ($dispositivo) {
+                $ubicacionFirebase = $this->getUbicacionPorDispositivoId($dispositivo->dispositivo_id);
+            }
         }
 
         return response()->json([
@@ -158,7 +243,7 @@ class GpsController extends BaseController
     }
 
     /**
-     * Obtiene el historial de ubicaciones de un servicio
+     * Historial de ubicaciones
      */
     public function historial($id)
     {
@@ -173,48 +258,88 @@ class GpsController extends BaseController
         ]);
     }
 
+    private function getDispositivosAsignados()
+    {
+        return Dispositivo::with(['chofer', 'vehiculo'])->where('activo', true)->get();
+    }
+
     // ============================================
     // MÉTODOS PARA FIREBASE
     // ============================================
 
     /**
-     * Obtener ubicación de un dispositivo específico desde Firebase
+     * Obtener ubicación de UN dispositivo específico
      */
-    public function getUbicacionDispositivo($dispositivoId)
+    private function getUbicacionPorDispositivoId($dispositivoId)
     {
         try {
-            $url = $this->firebaseUrl . '/ubicaciones';
+            $url = $this->firebaseUrl . '/ubicaciones/' . $dispositivoId;
             $response = $this->firebaseClient->get($url);
             $data = json_decode($response->getBody(), true);
 
-            if (isset($data['documents'])) {
-                foreach ($data['documents'] as $document) {
-                    $fields = $document['fields'] ?? [];
-                    $id = $this->getFieldValue($fields, 'dispositivoId', 'string');
-                    
-                    // Buscar por ID de chofer o dispositivo
-                    if ($id == $dispositivoId || strpos($id, (string)$dispositivoId) !== false) {
-                        return [
-                            'lat' => (float) $this->getFieldValue($fields, 'latitud', 'double'),
-                            'lng' => (float) $this->getFieldValue($fields, 'longitud', 'double'),
-                            'actualizado' => $this->getFieldValue($fields, 'actualizado', 'string'),
-                            'plataforma' => $this->getFieldValue($fields, 'plataforma', 'string'),
-                            'modelo' => $this->getFieldValue($fields, 'modelo', 'string'),
-                            'dispositivoId' => $id,
-                        ];
-                    }
-                }
+            if (!isset($data['fields'])) {
+                return null;
             }
-            return null;
+
+            $fields = $data['fields'];
+            
+            $lat = (float) $this->getFieldValue($fields, 'latitud', 'double');
+            $lng = (float) $this->getFieldValue($fields, 'longitud', 'double');
+
+            if ($lat == 0 && $lng == 0) {
+                return null;
+            }
+
+            return [
+                'id' => basename($data['name']),
+                'dispositivoId' => $this->getFieldValue($fields, 'dispositivoId', 'string') ?? $dispositivoId,
+                'lat' => $lat,
+                'lng' => $lng,
+                'nombre' => $this->getFieldValue($fields, 'modelo', 'string') ?? 'Dispositivo',
+                'plataforma' => $this->getFieldValue($fields, 'plataforma', 'string') ?? 'desconocida',
+                'actualizado' => $this->getFieldValue($fields, 'actualizado', 'string'),
+                'timestamp' => (int) $this->getFieldValue($fields, 'timestamp', 'integer'),
+            ];
 
         } catch (\Exception $e) {
-            \Log::error('Error al obtener ubicación de Firebase: ' . $e->getMessage());
+            \Log::error('Error al obtener ubicación por ID:', [
+                'dispositivo_id' => $dispositivoId,
+                'error' => $e->getMessage()
+            ]);
             return null;
         }
     }
 
     /**
-     * Obtener todas las ubicaciones desde Firebase
+     * API: Obtener ubicación de UN dispositivo específico
+     */
+    public function getUbicacionDispositivoApi($dispositivoId)
+    {
+        try {
+            $ubicacion = $this->getUbicacionPorDispositivoId($dispositivoId);
+
+            if (!$ubicacion) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay ubicación disponible para este dispositivo'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $ubicacion
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener TODAS las ubicaciones (admin)
      */
     public function getTodasUbicaciones()
     {
@@ -232,7 +357,6 @@ class GpsController extends BaseController
                     $lat = (float) $this->getFieldValue($fields, 'latitud', 'double');
                     $lng = (float) $this->getFieldValue($fields, 'longitud', 'double');
                     
-                    // Solo incluir ubicaciones válidas
                     if ($lat != 0 && $lng != 0) {
                         $ubicaciones[] = [
                             'id' => basename($document['name']),
@@ -257,7 +381,7 @@ class GpsController extends BaseController
     }
 
     /**
-     * API para obtener ubicaciones de Firebase (para el mapa en tiempo real)
+     * API: Todas las ubicaciones (admin)
      */
     public function getFirebaseUbicaciones()
     {
@@ -269,25 +393,21 @@ class GpsController extends BaseController
     }
 
     /**
-     * ✅ CORREGIDO: Vista del administrador para ver todos los vehículos en el mapa
+     * Vista del administrador
      */
     public function adminMapa()
     {
-        // Verificar que sea admin
         if (!auth()->user()->isAdmin()) {
             abort(403, 'No tienes permiso para acceder a esta sección.');
         }
 
-        // ✅ CORREGIDO: Obtener todos los vehículos con sus servicios activos
         $vehiculos = Vehiculo::with(['servicios' => function($query) {
             $query->whereIn('estado', ['confirmado', 'en_progreso'])
                   ->with(['chofer', 'cliente']);
         }])->get();
         
-        // Obtener ubicaciones de Firebase
         $ubicacionesFirebase = $this->getTodasUbicaciones();
         
-        // Obtener servicios activos
         $serviciosActivos = Servicio::whereIn('estado', ['confirmado', 'en_progreso'])
             ->with(['cliente', 'chofer', 'vehiculo'])
             ->get();
@@ -296,67 +416,34 @@ class GpsController extends BaseController
     }
 
     /**
-     * API para obtener ubicaciones de vehículos (para el mapa admin)
+     * API con nombres de choferes (admin)
      */
     public function getUbicacionesVehiculos()
     {
         try {
+            $dispositivos = $this->getDispositivosAsignados();
             $ubicaciones = $this->getTodasUbicaciones();
             
-            // ✅ CORREGIDO: Obtener vehículos con servicios activos
-            $vehiculos = Vehiculo::with(['servicios' => function($query) {
-                $query->whereIn('estado', ['confirmado', 'en_progreso'])
-                      ->with(['chofer', 'cliente']);
-            }])->get();
-            
-            $serviciosActivos = Servicio::whereIn('estado', ['confirmado', 'en_progreso'])
-                ->with(['cliente', 'chofer', 'vehiculo'])
-                ->get();
-
             $data = [];
             
             foreach ($ubicaciones as $ubicacion) {
-                // Buscar si este dispositivo pertenece a algún chofer/vehículo
-                $vehiculo = null;
-                $servicio = null;
-                $chofer = null;
-                
-                // Buscar en los servicios activos
-                foreach ($serviciosActivos as $s) {
-                    if ($s->chofer && strpos($ubicacion['dispositivoId'], (string)$s->chofer_id) !== false) {
-                        $vehiculo = $s->vehiculo;
-                        $chofer = $s->chofer;
-                        $servicio = $s;
-                        break;
-                    }
-                }
+                $dispositivo = $dispositivos->firstWhere('dispositivo_id', $ubicacion['dispositivoId']);
                 
                 $data[] = [
                     'id' => $ubicacion['id'],
                     'dispositivoId' => $ubicacion['dispositivoId'],
                     'lat' => $ubicacion['lat'],
                     'lng' => $ubicacion['lng'],
-                    'vehiculo' => $vehiculo ? [
-                        'id' => $vehiculo->id,
-                        'placa' => $vehiculo->placa,
-                        'marca' => $vehiculo->marca,
-                        'modelo' => $vehiculo->modelo,
-                        'tipo' => $vehiculo->tipo,
-                        'capacidad_kg' => $vehiculo->capacidad_kg,
+                    'chofer' => $dispositivo ? [
+                        'id' => $dispositivo->chofer->id ?? null,
+                        'nombre' => $dispositivo->chofer->nombre_completo ?? 'Sin asignar',
+                        'telefono' => $dispositivo->chofer->telefono ?? null,
                     ] : null,
-                    'chofer' => $chofer ? [
-                        'id' => $chofer->id,
-                        'nombre' => $chofer->nombre_completo,
-                        'telefono' => $chofer->telefono ?? 'Sin teléfono',
-                        'licencia' => $chofer->licencia ?? 'Sin licencia',
-                    ] : null,
-                    'servicio' => $servicio ? [
-                        'id' => $servicio->id,
-                        'cliente' => $servicio->cliente->nombre_completo ?? 'Sin cliente',
-                        'origen' => $servicio->origen,
-                        'destino' => $servicio->destino,
-                        'estado' => $servicio->estado,
-                        'fecha' => $servicio->fecha_servicio->format('d/m/Y'),
+                    'vehiculo' => $dispositivo ? [
+                        'id' => $dispositivo->vehiculo->id ?? null,
+                        'placa' => $dispositivo->vehiculo->placa ?? 'Sin vehículo',
+                        'marca' => $dispositivo->vehiculo->marca ?? '',
+                        'modelo' => $dispositivo->vehiculo->modelo ?? '',
                     ] : null,
                     'plataforma' => $ubicacion['plataforma'],
                     'actualizado' => $ubicacion['actualizado'],
@@ -379,7 +466,7 @@ class GpsController extends BaseController
     }
 
     /**
-     * Función auxiliar para extraer valores de Firestore
+     * Función auxiliar para Firestore
      */
     private function getFieldValue($fields, $fieldName, $type)
     {

@@ -29,17 +29,17 @@ class UserController extends BaseController
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6|confirmed',
-            'role' => 'required|in:admin,recepcionista,chofer'
+            'name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'\-\.]+$/u'],
+            'email' => ['required', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+            'role' => ['required', 'in:admin,recepcionista,chofer'],
         ]);
 
         User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => $validated['role']
+            'role' => $validated['role'],
         ]);
 
         return redirect()->route('users.index')
@@ -53,7 +53,6 @@ class UserController extends BaseController
 
     public function edit(User $user)
     {
-        // No permitir editar al usuario admin principal (ID 1)
         if ($user->id === 1) {
             return redirect()->route('users.index')
                 ->with('error', '❌ No puedes editar al usuario administrador principal.');
@@ -63,16 +62,15 @@ class UserController extends BaseController
 
     public function update(Request $request, User $user)
     {
-        // No permitir editar al usuario admin principal (ID 1)
         if ($user->id === 1) {
             return redirect()->route('users.index')
                 ->with('error', '❌ No puedes editar al usuario administrador principal.');
         }
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|in:admin,recepcionista,chofer'
+            'name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'\-\.]+$/u'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'role' => ['required', 'in:admin,recepcionista,chofer'],
         ]);
 
         $user->update($validated);
@@ -83,13 +81,11 @@ class UserController extends BaseController
 
     public function destroy(User $user)
     {
-        // No permitir eliminar al usuario admin principal (ID 1)
         if ($user->id === 1) {
             return redirect()->route('users.index')
                 ->with('error', '❌ No puedes eliminar al usuario administrador principal.');
         }
 
-        // No permitir eliminarse a sí mismo
         if ($user->id === auth()->id()) {
             return redirect()->route('users.index')
                 ->with('error', '❌ No puedes eliminarte a ti mismo.');
@@ -102,18 +98,17 @@ class UserController extends BaseController
 
     public function resetPassword(Request $request, User $user)
     {
-        // No permitir resetear contraseña del admin principal (ID 1)
         if ($user->id === 1) {
             return redirect()->route('users.index')
                 ->with('error', '❌ No puedes resetear la contraseña del administrador principal.');
         }
 
         $validated = $request->validate([
-            'password' => 'required|min:6|confirmed'
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
 
         $user->update([
-            'password' => Hash::make($validated['password'])
+            'password' => Hash::make($validated['password']),
         ]);
 
         return redirect()->route('users.index')

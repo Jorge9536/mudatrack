@@ -12,13 +12,23 @@
             <h1 class="h3 d-inline-block mb-0"><i class="fas fa-map-marked-alt me-2 text-primary"></i>Seguimiento en Tiempo Real</h1>
             <small class="text-muted d-block">Servicio #{{ $servicio->id }} · {{ $servicio->cliente->nombre_completo }}</small>
         </div>
-        <div>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
             <span class="badge bg-success" id="estado-conexion">
                 <i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> En vivo
             </span>
-            <span class="badge bg-info ms-1">
+            <span class="badge bg-info">
                 <i class="fas fa-sync me-1"></i> <span id="segundos">0</span>s
             </span>
+            
+            {{-- 🔥 BOTÓN COMPARTIR POR WHATSAPP --}}
+            <button class="btn btn-success btn-sm" onclick="compartirWhatsApp()">
+                <i class="fab fa-whatsapp me-1"></i> Compartir con el cliente
+            </button>
+            
+            {{-- 🔥 BOTÓN COPIAR URL --}}
+            <button class="btn btn-outline-secondary btn-sm" onclick="copiarUrl()">
+                <i class="fas fa-copy me-1"></i> Copiar enlace
+            </button>
         </div>
     </div>
 
@@ -35,21 +45,17 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <div class="row text-center">
-                        <div class="col-md-3">
-                            <div class="text-muted small">Dispositivos Activos</div>
-                            <strong id="total-dispositivos">{{ count($dispositivosFirebase ?? []) }}</strong>
-                        </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="text-muted small">Última Actualización</div>
-                            <strong id="ultima-actualizacion">Hace 5 seg</strong>
+                            <strong id="ultima-actualizacion">Cargando...</strong>
                         </div>
-                        <div class="col-md-3">
-                            <div class="text-muted small">Ubicaciones BD Local</div>
+                        <div class="col-md-4">
+                            <div class="text-muted small">Ubicaciones Registradas</div>
                             <strong>{{ $ubicaciones->count() }}</strong>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="text-muted small">Estado</div>
-                            <strong class="text-success">
+                            <strong class="text-success" id="estado-gps">
                                 <i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> Activo
                             </strong>
                         </div>
@@ -83,27 +89,25 @@
                         <span class="text-muted">Chofer</span>
                         <strong>{{ $servicio->chofer->nombre_completo ?? 'No asignado' }}</strong>
                     </div>
-                    @if($ubicacionFirebase)
+                    @if($dispositivoAsignado)
                     <hr>
                     <div class="d-flex justify-content-between">
-                        <span class="text-muted">📍 Firebase</span>
-                        <strong>
-                            {{ number_format($ubicacionFirebase['lat'], 6) }}, 
-                            {{ number_format($ubicacionFirebase['lng'], 6) }}
-                        </strong>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted">Dispositivo</span>
-                        <strong>{{ $ubicacionFirebase['modelo'] ?? 'Móvil' }}</strong>
+                        <span class="text-muted">📡 Dispositivo</span>
+                        <strong>{{ $dispositivoAsignado->dispositivo_id }}</strong>
                     </div>
                     @endif
-                    @if($ultimaUbicacion)
+                    @if($ubicacionFirebase)
                     <div class="d-flex justify-content-between">
-                        <span class="text-muted">📍 BD Local</span>
+                        <span class="text-muted">📍 Última posición</span>
                         <strong>
-                            {{ number_format($ultimaUbicacion->latitud, 6) }}, 
-                            {{ number_format($ultimaUbicacion->longitud, 6) }}
+                            {{ number_format($ubicacionFirebase['lat'], 5) }}, 
+                            {{ number_format($ubicacionFirebase['lng'], 5) }}
                         </strong>
+                    </div>
+                    @else
+                    <div class="alert alert-warning mt-3 mb-0 py-2 small">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Sin ubicación GPS disponible
                     </div>
                     @endif
                 </div>
@@ -129,15 +133,6 @@
                             </span>
                         </div>
                     </div>
-                    <hr>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-primary flex-grow-1">
-                            <i class="fas fa-phone-alt me-1"></i> Llamar
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary flex-grow-1">
-                            <i class="fas fa-comment me-1"></i> Mensaje
-                        </button>
-                    </div>
                     @else
                     <div class="text-center text-muted py-3">
                         <i class="fas fa-user-slash fa-2x mb-2 d-block"></i>
@@ -156,121 +151,135 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Datos de Firebase
-    const dispositivosFirebase = @json($dispositivosFirebase);
-    const ubicacionFirebase = @json($ubicacionFirebase);
     const servicio = @json($servicio);
     const ubicacionesLocal = @json($ubicaciones);
+    const dispositivoId = '{{ $dispositivoAsignado->dispositivo_id ?? "" }}';
     
     let map;
-    let markers = {};
     let vehicleMarker = null;
+    let rutaLinea = null;
     let updateInterval;
     let contadorSegundos = 0;
 
-    // Inicializar mapa
     function initMap() {
-        // Centro en Bolivia
         const center = [-16.5, -68.13];
-        map = L.map('mapa').setView(center, 12);
+        map = L.map('mapa').setView(center, 13);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
     }
 
-    // Cargar ubicaciones de Firebase
-    function cargarUbicacionesFirebase() {
-        fetch('{{ route("gps.firebase.ubicaciones") }}')
+    function cargarUbicacionDispositivo() {
+        if (!dispositivoId) {
+            document.getElementById('ultima-actualizacion').textContent = 'Sin dispositivo';
+            document.getElementById('estado-gps').innerHTML = 
+                '<i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> Sin GPS';
+            document.getElementById('estado-gps').className = 'text-danger';
+            return;
+        }
+
+        fetch(`/gps/dispositivo/${dispositivoId}/ubicacion`)
             .then(response => response.json())
             .then(data => {
-                if (data.success && data.data.length > 0) {
+                if (data.success && data.data) {
                     actualizarMapa(data.data);
-                    actualizarContador(data.data.length);
+                    actualizarInfo(data.data);
+                } else {
+                    document.getElementById('ultima-actualizacion').textContent = 'Sin datos';
                 }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('ultima-actualizacion').textContent = 'Error de conexión';
+            });
     }
 
-    // Actualizar mapa con ubicaciones
-    function actualizarMapa(ubicaciones) {
-        // Limpiar marcadores anteriores
-        Object.keys(markers).forEach(key => {
-            if (markers[key]) {
-                map.removeLayer(markers[key]);
-            }
+    function actualizarMapa(ubicacion) {
+        if (vehicleMarker) {
+            map.removeLayer(vehicleMarker);
+        }
+
+        const vehicleIcon = L.divIcon({
+            html: `
+                <div style="
+                    background: #0d6efd;
+                    border-radius: 50%;
+                    width: 45px;
+                    height: 45px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: 3px solid white;
+                    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.5);
+                ">
+                    <i class="fas fa-truck" style="font-size: 22px; color: white;"></i>
+                </div>
+            `,
+            className: '',
+            iconSize: [45, 45],
+            iconAnchor: [22, 22]
         });
-        markers = {};
 
-        // Mostrar ubicaciones de Firebase
-        ubicaciones.forEach(ubicacion => {
-            const color = ubicacion.plataforma === 'android' ? '#0d6efd' : '#6c757d';
-            
-            const icon = L.divIcon({
-                className: 'custom-div-icon',
-                html: `
-                    <div style="background: ${color}; border-radius: 50%; width: 14px; height: 14px; border: 3px solid white; box-shadow: 0 0 15px rgba(13, 110, 253, 0.5);"></div>
-                `,
-                iconSize: [20, 20],
-                iconAnchor: [10, 10]
-            });
-
-            const marker = L.marker([ubicacion.lat, ubicacion.lng], { icon })
-                .addTo(map)
-                .bindPopup(`
-                    <strong>${ubicacion.nombre}</strong><br>
-                    <i class="fab fa-${ubicacion.plataforma}"></i> ${ubicacion.plataforma}<br>
-                    <i class="fas fa-id-card"></i> ${ubicacion.dispositivoId}<br>
+        vehicleMarker = L.marker([ubicacion.lat, ubicacion.lng], { 
+            icon: vehicleIcon,
+            zIndexOffset: 1000
+        })
+        .addTo(map)
+        .bindPopup(`
+            <div style="min-width: 200px;">
+                <strong>🚚 ${servicio.chofer ? servicio.chofer.nombre_completo : 'Vehículo'}</strong><br>
+                <hr style="margin: 5px 0;">
+                <small>
                     <i class="fas fa-map-pin"></i> ${ubicacion.lat.toFixed(6)}, ${ubicacion.lng.toFixed(6)}<br>
-                    <small><i class="fas fa-clock"></i> ${ubicacion.actualizado ? new Date(ubicacion.actualizado).toLocaleString() : 'Sin datos'}</small>
-                `);
+                    <i class="fas fa-clock"></i> ${ubicacion.actualizado ? new Date(ubicacion.actualizado).toLocaleString('es-BO') : 'Sin datos'}<br>
+                    <i class="fas fa-satellite-dish"></i> ${ubicacion.dispositivoId}
+                </small>
+            </div>
+        `)
+        .openPopup();
 
-            markers[ubicacion.dispositivoId] = marker;
-        });
-
-        // Mostrar ubicaciones de la BD local (como línea de ruta)
-        if (ubicacionesLocal.length > 0) {
-            const points = ubicacionesLocal.map(u => [u.latitud, u.longitud]);
-            L.polyline(points, {
-                color: '#ffc107',
-                weight: 3,
-                opacity: 0.7,
-                dashArray: '5, 10'
-            }).addTo(map);
-        }
-
-        // Marcar el vehículo del servicio actual
-        if (ubicacionFirebase) {
-            const vehicleIcon = L.divIcon({
-                html: '<i class="fas fa-truck" style="font-size:2.8rem;color:#0d6efd;text-shadow:0 0 30px rgba(13,110,253,0.6);"></i>',
-                className: '',
-                iconSize: [30, 30]
-            });
-            vehicleMarker = L.marker([ubicacionFirebase.lat, ubicacionFirebase.lng], { icon: vehicleIcon })
-                .addTo(map)
-                .bindPopup(`
-                    <strong>🚚 Vehículo</strong><br>
-                    Chofer: ${servicio.chofer?.nombre_completo || 'N/A'}<br>
-                    Lat: ${ubicacionFirebase.lat.toFixed(6)}<br>
-                    Lng: ${ubicacionFirebase.lng.toFixed(6)}
-                `);
-        }
-
-        // Ajustar zoom
-        const allMarkers = Object.values(markers);
-        if (allMarkers.length > 0) {
-            const group = L.featureGroup(allMarkers);
-            map.fitBounds(group.getBounds().pad(0.1));
-        }
+        map.setView([ubicacion.lat, ubicacion.lng], 15);
     }
 
-    // Actualizar contador y tiempo
-    function actualizarContador(total) {
-        document.getElementById('total-dispositivos').textContent = total;
-        document.getElementById('ultima-actualizacion').textContent = 'Hace ' + contadorSegundos + ' seg';
+    function mostrarRutaHistorica() {
+        if (ubicacionesLocal.length < 2) return;
+
+        if (rutaLinea) {
+            map.removeLayer(rutaLinea);
+        }
+
+        const points = ubicacionesLocal.map(u => [u.latitud, u.longitud]);
+        rutaLinea = L.polyline(points, {
+            color: '#ffc107',
+            weight: 4,
+            opacity: 0.7,
+            dashArray: '8, 8'
+        }).addTo(map);
     }
 
-    // Actualizar contador de segundos
+    function actualizarInfo(ubicacion) {
+        if (ubicacion.actualizado) {
+            document.getElementById('ultima-actualizacion').textContent = timeAgo(ubicacion.actualizado);
+        }
+        document.getElementById('estado-gps').innerHTML = 
+            '<i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> Activo';
+        document.getElementById('estado-gps').className = 'text-success';
+    }
+
+    function timeAgo(fecha) {
+        if (!fecha) return 'Nunca';
+        const ahora = new Date();
+        const fechaDate = new Date(fecha);
+        const diff = Math.floor((ahora - fechaDate) / 1000);
+        
+        if (diff < 0) return 'Ahora';
+        if (diff < 60) return 'Hace ' + diff + ' seg';
+        if (diff < 3600) return 'Hace ' + Math.floor(diff / 60) + ' min';
+        if (diff < 86400) return 'Hace ' + Math.floor(diff / 3600) + ' h';
+        return 'Hace ' + Math.floor(diff / 86400) + ' días';
+    }
+
     function actualizarSegundos() {
         contadorSegundos++;
         document.getElementById('segundos').textContent = contadorSegundos;
@@ -280,35 +289,68 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Inicializar
-    initMap();
-    cargarUbicacionesFirebase();
+    // 🔥 COMPARTIR POR WHATSAPP
+    window.compartirWhatsApp = function() {
+        const token = '{{ $servicio->token_seguimiento }}';
+        const url = `${window.location.origin}/seguimiento/${token}`;
+        const cliente = '{{ $servicio->cliente->nombre_completo }}';
+        const telefono = '{{ preg_replace("/[^0-9]/", "", $servicio->cliente->telefono ?? "") }}';
+        
+        if (!telefono) {
+            alert('⚠️ El cliente no tiene teléfono registrado');
+            return;
+        }
+        
+        let telefonoFull = telefono;
+        if (telefono.length === 8) {
+            telefonoFull = '591' + telefono;
+        }
+        
+        const mensaje = `Hola ${cliente}, puede ver el seguimiento en tiempo real de su mudanza aquí:\n\n${url}\n\nMudatrack 🚚`;
+        
+        const whatsappUrl = `https://wa.me/${telefonoFull}?text=${encodeURIComponent(mensaje)}`;
+        window.open(whatsappUrl, '_blank');
+    };
 
-    // Actualizar cada 10 segundos
+    // 🔥 COPIAR URL
+    window.copiarUrl = function() {
+        const token = '{{ $servicio->token_seguimiento }}';
+        const url = `${window.location.origin}/seguimiento/${token}`;
+        
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = event.target.closest('button');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check me-1"></i> ¡Copiado!';
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-success');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-secondary');
+            }, 2000);
+        }).catch(err => {
+            prompt('Copia el enlace:', url);
+        });
+    };
+
+    initMap();
+    mostrarRutaHistorica();
+    cargarUbicacionDispositivo();
+
     updateInterval = setInterval(() => {
-        cargarUbicacionesFirebase();
+        cargarUbicacionDispositivo();
         contadorSegundos = 0;
         document.getElementById('estado-conexion').className = 'badge bg-success';
         document.getElementById('estado-conexion').innerHTML = '<i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> En vivo';
     }, 10000);
 
-    // Actualizar contador de segundos cada segundo
     setInterval(actualizarSegundos, 1000);
 
-    // Limpiar al salir
     window.addEventListener('beforeunload', function() {
-        if (updateInterval) {
-            clearInterval(updateInterval);
-        }
+        if (updateInterval) clearInterval(updateInterval);
     });
 });
 </script>
-
-<style>
-    .custom-div-icon {
-        background: transparent;
-        border: none;
-    }
-</style>
 @endpush
 @endsection

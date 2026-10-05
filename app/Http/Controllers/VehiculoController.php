@@ -27,12 +27,12 @@ class VehiculoController extends BaseController
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'placa' => 'required|string|max:10|unique:vehiculos',
-            'marca' => 'required|string|max:50',
-            'modelo' => 'required|string|max:50',
-            'tipo' => 'required|in:3ton,6ton,chata',
-            'capacidad_kg' => 'required|integer|min:1',
-            'observaciones' => 'nullable|string'
+            'placa' => ['required', 'string', 'max:10', 'regex:/^[A-Za-z0-9\-]+$/', 'unique:vehiculos'],
+            'marca' => ['required', 'string', 'max:50', 'regex:/^[\pL\s\'\-\.]+$/u'],
+            'modelo' => ['required', 'string', 'max:50', 'regex:/^[\pL0-9\s\'\-\.]+$/u'],
+            'tipo' => ['required', 'in:3ton,6ton,chata'],
+            'capacidad_kg' => ['required', 'integer', 'min:1'],
+            'observaciones' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $validated['disponible'] = true;
@@ -56,13 +56,13 @@ class VehiculoController extends BaseController
     public function update(Request $request, Vehiculo $vehiculo)
     {
         $validated = $request->validate([
-            'placa' => 'required|string|max:10|unique:vehiculos,placa,' . $vehiculo->id,
-            'marca' => 'required|string|max:50',
-            'modelo' => 'required|string|max:50',
-            'tipo' => 'required|in:3ton,6ton,chata',
-            'capacidad_kg' => 'required|integer|min:1',
-            'disponible' => 'boolean',
-            'observaciones' => 'nullable|string'
+            'placa' => ['required', 'string', 'max:10', 'regex:/^[A-Za-z0-9\-]+$/', 'unique:vehiculos,placa,' . $vehiculo->id],
+            'marca' => ['required', 'string', 'max:50', 'regex:/^[\pL\s\'\-\.]+$/u'],
+            'modelo' => ['required', 'string', 'max:50', 'regex:/^[\pL0-9\s\'\-\.]+$/u'],
+            'tipo' => ['required', 'in:3ton,6ton,chata'],
+            'capacidad_kg' => ['required', 'integer', 'min:1'],
+            'disponible' => ['boolean'],
+            'observaciones' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $vehiculo->update($validated);
