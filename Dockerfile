@@ -16,11 +16,19 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
+
+# 1. Copia solo los archivos de dependencias PRIMERO
+COPY composer.json composer.lock package.json package-lock.json ./
+
+# 2. Instala las dependencias DENTRO del contenedor (esto arregla los permisos)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-grpc
+RUN npm install
+
+# 3. Copia el resto de tu código
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-grpc
-
-RUN npm install && npm run build
+# 4. Compila los assets
+RUN npm run build
 
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
