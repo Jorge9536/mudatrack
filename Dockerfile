@@ -17,19 +17,16 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# 1. Copia solo los archivos de dependencias PRIMERO
-COPY composer.json composer.lock package.json package-lock.json ./
-
-# 2. Instala las dependencias DENTRO del contenedor (esto arregla los permisos)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-grpc
-RUN npm install
-
-# 3. Copia el resto de tu código
+# 1. Copia TODO el código primero (esto incluye el archivo artisan)
 COPY . .
 
-# 4. Compila los assets
-RUN npm run build
+# 2. Ahora sí, instala las dependencias de PHP
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-grpc
 
+# 3. Instala y compila los assets de frontend
+RUN npm install && npm run build
+
+# 4. Prepara las carpetas con permisos
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
