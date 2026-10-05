@@ -18,12 +18,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY . .
 
-# Crear carpetas ANTES de composer install (arregla "must be present and writable")
 RUN mkdir -p bootstrap/cache \
-    && mkdir -p storage/framework/{sessions,views,cache} \
+    && mkdir -p storage/framework/sessions \
+    && mkdir -p storage/framework/views \
+    && mkdir -p storage/framework/cache \
     && mkdir -p storage/logs \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+    && chmod -R 777 storage bootstrap/cache
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-grpc
 
