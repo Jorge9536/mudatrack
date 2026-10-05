@@ -1,15 +1,9 @@
 FROM php:8.2-apache
 
-# Instalar dependencias del sistema (incluye lo necesario para gRPC)
 RUN apt-get update && apt-get install -y \
     git curl libpng-dev libonig-dev libxml2-dev libpq-dev libzip-dev \
     zip unzip nodejs npm \
-    libgrpc-dev protobuf-compiler \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Instalar extensiones PHP (incluye gRPC)
-RUN pecl install grpc \
-    && docker-php-ext-enable grpc
 
 RUN docker-php-ext-install pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
 
@@ -24,7 +18,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-grpc
 
 RUN npm install && npm run build
 
