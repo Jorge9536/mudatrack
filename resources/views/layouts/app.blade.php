@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>MudaTrack - @yield('title', 'Sistema de Gestión')</title>
+    <title>MudaTrackingenniero - @yield('title', 'Sistema de Gestión')</title>
     
     <!-- ============================================ -->
     <!-- CDNs - CARGADOS GLOBALMENTE -->
