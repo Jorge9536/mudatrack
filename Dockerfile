@@ -18,12 +18,16 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-grpc
-RUN npm install && npm run build
-
-RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
+# Crear carpetas ANTES de composer install (arregla "must be present and writable")
+RUN mkdir -p bootstrap/cache \
+    && mkdir -p storage/framework/{sessions,views,cache} \
+    && mkdir -p storage/logs \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
+
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-grpc
+
+RUN npm install && npm run build
 
 EXPOSE 80
 
