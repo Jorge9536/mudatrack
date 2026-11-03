@@ -4,68 +4,63 @@
 
 @push('styles')
 <style>
-    /* ============================================ */
-    /* ESTILOS PARA EL CALENDARIO - CORREGIDO */
-    /* ============================================ */
-    
     #calendar {
         max-width: 100% !important;
         margin: 0 auto !important;
         background: white !important;
         border-radius: 12px !important;
         padding: 16px !important;
-        min-height: 500px !important;
+        min-height: 700px !important;
     }
-
-    /* ============================================ */
-    /* ESTILOS PARA EVENTOS - MES Y SEMANA COMPACTOS */
-    /* ============================================ */
-    
     .fc-event {
         border: none !important;
-        border-radius: 3px !important;
-        padding: 1px 4px !important;
-        font-size: 0.5rem !important;
+        border-radius: 6px !important;
+        padding: 6px 10px !important;
+        font-size: 0.9rem !important;
         font-weight: 600 !important;
         cursor: pointer !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
-        margin: 1px 2px !important;
-        line-height: 1.2 !important;
-        min-width: 20px !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+        margin: 2px 3px !important;
+        line-height: 1.4 !important;
+        min-height: 40px !important;
         transition: all 0.2s ease !important;
         overflow: hidden !important;
-        max-width: 100% !important;
+        max-width: calc(100% - 6px) !important;
         display: block !important;
-        white-space: nowrap !important;
-        text-overflow: ellipsis !important;
+        color: #ffffff !important;
     }
 
     .fc-event:hover {
-        transform: scale(1.02) !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        transform: scale(1.03) !important;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.25) !important;
         z-index: 10 !important;
     }
 
+    .fc-event,
+    .fc-event *,
+    .fc-event .fc-event-main,
+    .fc-event .fc-event-main-frame,
+    .fc-event .fc-event-title-container,
     .fc-event .fc-event-title {
-        font-weight: 600 !important;
-        font-size: 0.5rem !important;
+        color: #ffffff !important;
+    }
+
+    .fc-event .fc-event-title {
+        font-weight: 700 !important;
+        font-size: 0.9rem !important;
         display: block !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.25) !important;
     }
 
     .fc-event .fc-event-time {
-        font-weight: 400 !important;
-        opacity: 0.85 !important;
-        font-size: 0.45rem !important;
-        margin-right: 2px !important;
+        font-weight: 600 !important;
+        opacity: 1 !important;
+        font-size: 0.8rem !important;
+        margin-right: 6px !important;
     }
-
-    /* ============================================ */
-    /* OCULTAR PERSONAL EN MES Y SEMANA */
-    /* ============================================ */
-    
     .fc-daygrid-event .event-personal,
     .fc-daygrid-event .event-ayudantes,
     .fc-timegrid-event .event-personal,
@@ -73,10 +68,6 @@
         display: none !important;
     }
 
-    /* ============================================ */
-    /* MOSTRAR PERSONAL SOLO EN VISTA DÍA - TAMAÑOS MEJORADOS */
-    /* ============================================ */
-    
     .fc-dayGridDay-view .fc-event .event-personal,
     .fc-dayGridDay-view .fc-event .event-ayudantes,
     .fc-timeGridDay-view .fc-event .event-personal,
@@ -84,87 +75,74 @@
         display: block !important;
     }
 
-    /* 🟢 CHOFER - TAMAÑO MEJORADO */
     .fc-dayGridDay-view .fc-event .event-personal,
     .fc-timeGridDay-view .fc-event .event-personal {
-        font-size: 0.55rem !important;
-        opacity: 0.9 !important;
+        font-size: 0.9rem !important;
         display: block !important;
-        margin-top: 1px !important;
-        font-weight: 500 !important;
+        margin-top: 4px !important;
+        font-weight: 600 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
-        color: rgba(255,255,255,0.95) !important;
     }
 
     .fc-dayGridDay-view .fc-event .event-personal i,
     .fc-timeGridDay-view .fc-event .event-personal i {
-        margin-right: 2px !important;
-        font-size: 0.5rem !important;
-        width: 12px !important;
+        margin-right: 6px !important;
+        font-size: 0.85rem !important;
+        width: 16px !important;
     }
 
-    /* 🟢 VEHÍCULO - TAMAÑO MEJORADO (MÁS GRANDE) */
     .fc-dayGridDay-view .fc-event .event-vehiculo,
     .fc-timeGridDay-view .fc-event .event-vehiculo {
-        font-size: 0.5rem !important;
-        opacity: 0.75 !important;
+        font-size: 0.85rem !important;
         display: block !important;
-        margin-top: 1px !important;
-        font-weight: 400 !important;
+        margin-top: 4px !important;
+        font-weight: 500 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
-        color: rgba(255,255,255,0.85) !important;
     }
 
     .fc-dayGridDay-view .fc-event .event-vehiculo i,
     .fc-timeGridDay-view .fc-event .event-vehiculo i {
-        margin-right: 2px !important;
-        font-size: 0.45rem !important;
-        width: 12px !important;
+        margin-right: 6px !important;
+        font-size: 0.8rem !important;
+        width: 16px !important;
     }
 
-    /* 🟢 AYUDANTES - TAMAÑO MEJORADO */
     .fc-dayGridDay-view .fc-event .event-ayudantes,
     .fc-timeGridDay-view .fc-event .event-ayudantes {
-        font-size: 0.45rem !important;
-        opacity: 0.65 !important;
+        font-size: 0.8rem !important;
         display: block !important;
-        margin-top: 1px !important;
-        font-weight: 300 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        color: rgba(255,255,255,0.8) !important;
+        margin-top: 4px !important;
+        font-weight: 500 !important;
+        white-space: normal !important;
+        line-height: 1.4 !important;
     }
 
     .fc-dayGridDay-view .fc-event .event-ayudantes i,
     .fc-timeGridDay-view .fc-event .event-ayudantes i {
-        margin-right: 2px !important;
-        font-size: 0.4rem !important;
-        width: 12px !important;
+        margin-right: 6px !important;
+        font-size: 0.75rem !important;
+        width: 16px !important;
     }
 
-    /* ============================================ */
-    /* CELDAS DE DÍAS - MÁS COMPACTAS */
-    /* ============================================ */
-    
     .fc-daygrid-day-frame {
-        min-height: 55px !important;
-        padding: 2px !important;
+        min-height: 130px !important;
+        padding: 6px !important;
         overflow: hidden !important;
     }
 
     .fc-daygrid-day-events {
-        min-height: 15px !important;
-        max-height: 80px !important;
+        min-height: 30px !important;
+        max-height: 180px !important;
         overflow-y: auto !important;
+        margin-top: 4px !important;
     }
 
     .fc-daygrid-day-events::-webkit-scrollbar {
-        width: 2px !important;
+        width: 5px !important;
     }
 
     .fc-daygrid-day-events::-webkit-scrollbar-thumb {
@@ -173,10 +151,10 @@
     }
 
     .fc-daygrid-day-number {
-        font-weight: 600 !important;
-        font-size: 0.65rem !important;
+        font-weight: 700 !important;
+        font-size: 1rem !important;
         color: #1e293b !important;
-        padding: 2px 4px !important;
+        padding: 6px 10px !important;
     }
 
     .fc-daygrid-day.fc-day-today {
@@ -187,52 +165,54 @@
         background: #4f46e5 !important;
         color: white !important;
         border-radius: 50% !important;
-        width: 22px !important;
-        height: 22px !important;
+        width: 32px !important;
+        height: 32px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        margin: 2px !important;
-        font-size: 0.6rem !important;
+        margin: 4px !important;
+        font-size: 0.9rem !important;
     }
 
-    /* ============================================ */
-    /* VISTA SEMANA - MÁS COMPACTA */
-    /* ============================================ */
-    
     .fc-timegrid-slot {
-        height: 25px !important;
+        height: 45px !important;
     }
 
     .fc-timegrid-event {
-        border-radius: 3px !important;
-        padding: 1px 3px !important;
-        font-size: 0.5rem !important;
-        margin: 1px 2px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        border-radius: 6px !important;
+        padding: 6px 8px !important;
+        font-size: 0.85rem !important;
+        margin: 2px 3px !important;
     }
 
     .fc-timegrid-event .fc-event-title {
-        font-size: 0.45rem !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        font-size: 0.85rem !important;
+        line-height: 1.3 !important;
     }
 
-    /* ============================================ */
-    /* BOTONES DE VISTA */
-    /* ============================================ */
-    
+    .fc-col-header-cell {
+        padding: 12px 4px !important;
+        background: #f8fafc !important;
+        font-weight: 700 !important;
+    }
+
+    .fc-col-header-cell-cushion {
+        font-size: 0.95rem !important;
+        color: #1e293b !important;
+        text-transform: uppercase !important;
+        text-decoration: none !important;
+        padding: 4px !important;
+        letter-spacing: 0.5px !important;
+    }
+
     .fc .fc-button {
         background: #f1f5f9 !important;
         border: 1px solid #e2e8f0 !important;
         color: #1e293b !important;
-        font-weight: 600 !important;
-        font-size: 0.7rem !important;
-        padding: 4px 10px !important;
-        border-radius: 6px !important;
+        font-weight: 700 !important;
+        font-size: 0.9rem !important;
+        padding: 8px 16px !important;
+        border-radius: 8px !important;
         box-shadow: none !important;
         height: auto !important;
         text-transform: capitalize !important;
@@ -254,132 +234,132 @@
     }
 
     .fc .fc-toolbar-title {
-        font-size: 1rem !important;
-        font-weight: 700 !important;
+        font-size: 1.4rem !important;
+        font-weight: 800 !important;
         color: #1e293b !important;
+        text-transform: capitalize !important;
     }
 
-    /* ============================================ */
-    /* RESPONSIVE */
-    /* ============================================ */
-    
+    .fc-daygrid-more-link {
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+        color: #4f46e5 !important;
+        padding: 2px 6px !important;
+        background: rgba(79, 70, 229, 0.1) !important;
+        border-radius: 4px !important;
+    }
+
     @media (max-width: 768px) {
         .fc-event {
-            font-size: 0.4rem !important;
-            padding: 1px 2px !important;
-            margin: 1px 1px !important;
-            min-width: 15px !important;
+            font-size: 0.75rem !important;
+            padding: 4px 6px !important;
+            margin: 2px !important;
+            min-height: 30px !important;
         }
         .fc-event .fc-event-title {
-            font-size: 0.35rem !important;
+            font-size: 0.75rem !important;
         }
         .fc-event .fc-event-time {
-            font-size: 0.3rem !important;
+            font-size: 0.7rem !important;
         }
         .fc-daygrid-day-frame {
-            min-height: 35px !important;
+            min-height: 90px !important;
         }
         .fc-daygrid-day-number {
-            font-size: 0.55rem !important;
-            padding: 1px 2px !important;
-        }
-        .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
-            width: 18px !important;
-            height: 18px !important;
-            font-size: 0.55rem !important;
+            font-size: 0.9rem !important;
         }
         .fc .fc-toolbar {
             flex-direction: column !important;
-            align-items: center !important;
-            gap: 6px !important;
-        }
-        .fc .fc-toolbar-chunk {
-            display: flex !important;
-            flex-wrap: wrap !important;
-            justify-content: center !important;
-            gap: 3px !important;
+            gap: 10px !important;
         }
         .fc .fc-toolbar-title {
-            font-size: 0.75rem !important;
+            font-size: 1.1rem !important;
         }
         .fc .fc-button {
-            font-size: 0.55rem !important;
-            padding: 2px 6px !important;
+            font-size: 0.8rem !important;
+            padding: 6px 12px !important;
         }
         .fc-timegrid-slot {
-            height: 20px !important;
-        }
-        .fc-timegrid-event {
-            font-size: 0.4rem !important;
-            padding: 1px 2px !important;
-        }
-        .fc-timegrid-event .fc-event-title {
-            font-size: 0.35rem !important;
-        }
-        /* Vista día en móvil - tamaños ajustados */
-        .fc-dayGridDay-view .fc-event .event-personal,
-        .fc-timeGridDay-view .fc-event .event-personal {
-            font-size: 0.45rem !important;
-        }
-        .fc-dayGridDay-view .fc-event .event-vehiculo,
-        .fc-timeGridDay-view .fc-event .event-vehiculo {
-            font-size: 0.4rem !important;
-        }
-        .fc-dayGridDay-view .fc-event .event-ayudantes,
-        .fc-timeGridDay-view .fc-event .event-ayudantes {
-            font-size: 0.35rem !important;
+            height: 35px !important;
         }
     }
 
     @media (max-width: 480px) {
         .fc-event .fc-event-title {
-            font-size: 0.3rem !important;
+            font-size: 0.7rem !important;
         }
         .fc-event .fc-event-time {
-            font-size: 0.25rem !important;
-        }
-        .fc-daygrid-day-frame {
-            min-height: 28px !important;
-        }
-        .fc-daygrid-day-number {
-            font-size: 0.45rem !important;
-        }
-        .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
-            width: 14px !important;
-            height: 14px !important;
-            font-size: 0.45rem !important;
-        }
-        .fc .fc-toolbar-title {
             font-size: 0.65rem !important;
         }
+        .fc-daygrid-day-frame {
+            min-height: 70px !important;
+        }
+        .fc .fc-toolbar-title {
+            font-size: 1rem !important;
+        }
         .fc .fc-button {
-            font-size: 0.45rem !important;
-            padding: 1px 4px !important;
-        }
-        .fc-timegrid-slot {
-            height: 18px !important;
-        }
-        /* Vista día en móvil muy pequeño - ocultar detalles */
-        .fc-dayGridDay-view .fc-event .event-vehiculo,
-        .fc-timeGridDay-view .fc-event .event-vehiculo {
-            display: none !important;
-        }
-        .fc-dayGridDay-view .fc-event .event-ayudantes,
-        .fc-timeGridDay-view .fc-event .event-ayudantes {
-            display: none !important;
-        }
-        .fc-dayGridDay-view .fc-event .event-personal,
-        .fc-timeGridDay-view .fc-event .event-personal {
-            font-size: 0.4rem !important;
+            font-size: 0.7rem !important;
+            padding: 4px 8px !important;
         }
     }
 
-    /* Estilo para el cursor pointer en días */
     .fc-daygrid-day {
         cursor: pointer !important;
     }
     .fc-daygrid-day:hover {
-        background: rgba(79, 70, 229, 0.03) !important;
+        background: rgba(79, 70, 229, 0.04) !important;
+    }
+
+    .servicio-card-dia {
+        border-left: 4px solid;
+        padding: 14px 16px;
+        margin-bottom: 10px;
+        background: #f8fafc;
+        border-radius: 8px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .servicio-card-dia:hover {
+        background: #f1f5f9;
+        transform: translateX(3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .servicio-card-dia .servicio-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .servicio-card-dia .servicio-horario {
+        background: #1e293b;
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.85rem;
+    }
+    .servicio-card-dia .servicio-cliente {
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 1.05rem;
+    }
+    .servicio-card-dia .servicio-info {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .servicio-card-dia .servicio-info-item {
+        background: #fff;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+    .servicio-card-dia .servicio-info-item i {
+        color: #64748b;
+        margin-right: 4px;
     }
 </style>
 @endpush
@@ -402,7 +382,6 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <!-- Filtros -->
                     <div class="row g-2 mb-3">
                         <div class="col-md-3">
                             <select id="filtro-vehiculo" class="form-select form-select-sm">
@@ -435,31 +414,25 @@
                         </div>
                     </div>
 
-                    <!-- Calendario -->
+            
                     <div id="calendar"></div>
 
-                    <!-- Leyenda -->
+        
                     <div class="d-flex flex-wrap gap-3 justify-content-center mt-3 p-2 bg-light rounded">
-                        <span class="d-flex align-items-center gap-1">
-                            <span class="badge" style="background:#f59e0b; width:14px; height:14px;">&nbsp;</span> Pendiente
+                        <span class="d-flex align-items-center gap-1 small">
+                            <span style="background:#f59e0b; width:16px; height:16px; border-radius:4px; display:inline-block;"></span> Pendiente
                         </span>
-                        <span class="d-flex align-items-center gap-1">
-                            <span class="badge" style="background:#3b82f6; width:14px; height:14px;">&nbsp;</span> Confirmado
+                        <span class="d-flex align-items-center gap-1 small">
+                            <span style="background:#3b82f6; width:16px; height:16px; border-radius:4px; display:inline-block;"></span> Confirmado
                         </span>
-                        <span class="d-flex align-items-center gap-1">
-                            <span class="badge" style="background:#8b5cf6; width:14px; height:14px;">&nbsp;</span> En Progreso
+                        <span class="d-flex align-items-center gap-1 small">
+                            <span style="background:#8b5cf6; width:16px; height:16px; border-radius:4px; display:inline-block;"></span> En Progreso
                         </span>
-                        <span class="d-flex align-items-center gap-1">
-                            <span class="badge" style="background:#10b981; width:14px; height:14px;">&nbsp;</span> Finalizado
+                        <span class="d-flex align-items-center gap-1 small">
+                            <span style="background:#10b981; width:16px; height:16px; border-radius:4px; display:inline-block;"></span> Finalizado
                         </span>
-                        <span class="d-flex align-items-center gap-1">
-                            <span class="badge" style="background:#ef4444; width:14px; height:14px;">&nbsp;</span> Cancelado
-                        </span>
-                        <span class="d-flex align-items-center gap-1">
-                            <span class="badge" style="background:#f97316; width:14px; height:14px;">&nbsp;</span> Pendiente Pago
-                        </span>
-                        <span class="d-flex align-items-center gap-1">
-                            <span class="badge" style="background:#06b6d4; width:14px; height:14px;">&nbsp;</span> Pagado
+                        <span class="d-flex align-items-center gap-1 small">
+                            <span style="background:#ef4444; width:16px; height:16px; border-radius:4px; display:inline-block;"></span> Cancelado
                         </span>
                     </div>
                 </div>
@@ -468,9 +441,6 @@
     </div>
 </div>
 
-<!-- ============================================ -->
-<!-- MODAL DE DETALLES DEL EVENTO -->
-<!-- ============================================ -->
 <div class="modal fade" id="eventoModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -485,11 +455,8 @@
     </div>
 </div>
 
-<!-- ============================================ -->
-<!-- MODAL DE DÍA - TODOS LOS SERVICIOS DEL DÍA -->
-<!-- ============================================ -->
 <div class="modal fade" id="diaModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header" style="background: linear-gradient(135deg, #059669, #047857); color: white;">
                 <h5 class="modal-title">
@@ -502,9 +469,6 @@
     </div>
 </div>
 
-<!-- ============================================ -->
-<!-- MODAL DE DISPONIBILIDAD -->
-<!-- ============================================ -->
 <div class="modal fade" id="disponibilidadModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -527,24 +491,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var calendarEl = document.getElementById('calendar');
     
-    if (!calendarEl) {
-        console.error('❌ No se encontró #calendar');
+    if (!calendarEl) return;
+
+    if (typeof FullCalendar === 'undefined') {
+        calendarEl.innerHTML = `<div class="alert alert-danger">Error al cargar FullCalendar</div>`;
         return;
     }
 
-    if (typeof FullCalendar === 'undefined') {
-        console.error('❌ FullCalendar no está cargado');
-        document.getElementById('calendar').innerHTML = `
-            <div class="alert alert-danger text-center py-4">
-                <i class="fas fa-exclamation-circle fa-2x mb-2 d-block"></i>
-                <h5>Error al cargar el calendario</h5>
-                <p>FullCalendar no se cargó correctamente.</p>
-                <button onclick="location.reload()" class="btn btn-primary mt-2">
-                    <i class="fas fa-sync-alt me-1"></i> Recargar
-                </button>
-            </div>
-        `;
-        return;
+    function getColorEstado(estado) {
+        const colores = {
+            'pendiente':   '#f59e0b',
+            'confirmado':  '#3b82f6',
+            'en_progreso': '#8b5cf6',
+            'finalizado':  '#10b981',
+            'cancelado':   '#ef4444',
+        };
+        return colores[estado] || '#6c757d';
     }
 
     var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -561,18 +523,21 @@ document.addEventListener('DOMContentLoaded', function() {
             week: 'Semana',
             day: 'Día'
         },
-        // ============================================
-        // EVENTOS - MES Y SEMANA: SOLO TÍTULO
-        // DÍA: MUESTRA TODO CON TAMAÑOS MEJORADOS
-        // ============================================
+        eventDidMount: function(info) {
+            const color = getColorEstado(info.event.extendedProps.estado);
+            info.el.style.setProperty('background-color', color, 'important');
+            info.el.style.setProperty('border-color', color, 'important');
+            info.el.style.setProperty('color', '#ffffff', 'important');
+
+            const titleEl = info.el.querySelector('.fc-event-title');
+            const timeEl  = info.el.querySelector('.fc-event-time');
+            if (titleEl) titleEl.style.setProperty('color', '#ffffff', 'important');
+            if (timeEl)  timeEl.style.setProperty('color', '#ffffff', 'important');
+        },
         eventContent: function(info) {
             const props = info.event.extendedProps;
             const tiempo = info.event.start ? info.event.start.toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'}) : '';
-            
-            // Obtener la vista actual
             const viewType = info.view.type;
-            
-            // En vista DÍA mostrar todo
             if (viewType === 'dayGridDay' || viewType === 'timeGridDay') {
                 let html = `
                     <div class="fc-event-main" style="width:100%;">
@@ -582,44 +547,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                 `;
                 
-                // 🟢 CHOFER - TAMAÑO MEJORADO
                 if (props.chofer && props.chofer !== 'Sin asignar') {
-                    html += `
-                        <div class="event-personal">
-                            <i class="fas fa-user-circle"></i> ${props.chofer}
-                        </div>
-                    `;
+                    html += `<div class="event-personal"><i class="fas fa-user-circle"></i> ${props.chofer}</div>`;
                 }
-                
-                // 🟢 VEHÍCULO - TAMAÑO MEJORADO (MÁS GRANDE)
                 if (props.vehiculo && props.vehiculo !== 'Sin asignar') {
-                    // Mostrar solo la placa si es muy largo
-                    let vehiculoMostrar = props.vehiculo;
-                    if (vehiculoMostrar.length > 20) {
-                        vehiculoMostrar = vehiculoMostrar.split(' - ')[0] || vehiculoMostrar;
-                    }
-                    html += `
-                        <div class="event-vehiculo">
-                            <i class="fas fa-truck"></i> ${vehiculoMostrar}
-                        </div>
-                    `;
+                    let v = props.vehiculo;
+                    if (v.length > 20) v = v.split(' - ')[0] || v;
+                    html += `<div class="event-vehiculo"><i class="fas fa-truck"></i> ${v}</div>`;
                 }
-
-// 🟢 AYUDANTES - TODOS COMPLETOS (SIN LÍMITE)
-if (props.ayudantes && props.ayudantes.length > 0) {
-    let ayudantesTexto = props.ayudantes.join(', ');
-    html += `
-        <div class="event-ayudantes">
-            <i class="fas fa-users"></i> ${ayudantesTexto}
-        </div>
-    `;
-}
+                if (props.ayudantes && props.ayudantes.length > 0) {
+                    html += `<div class="event-ayudantes"><i class="fas fa-users"></i> ${props.ayudantes.join(', ')}</div>`;
+                }
                 
                 html += `</div>`;
                 return { html: html };
             }
-            
-            // En MES y SEMANA: SOLO TÍTULO (sin personal)
             return {
                 html: `
                     <div class="fc-event-main" style="width:100%;">
@@ -653,9 +595,6 @@ if (props.ayudantes && props.ayudantes.length > 0) {
                     failureCallback(error);
                 });
         },
-        // ============================================
-        // CLICK EN EVENTO - MUESTRA DETALLES
-        // ============================================
         eventClick: function(info) {
             const props = info.event.extendedProps;
             
@@ -664,9 +603,7 @@ if (props.ayudantes && props.ayudantes.length > 0) {
                 'confirmado': 'primary',
                 'en_progreso': 'secondary',
                 'finalizado': 'success',
-                'cancelado': 'danger',
-                'pendiente_pago': 'danger',
-                'pagado': 'info'
+                'cancelado': 'danger'
             };
 
             const estadoIcon = {
@@ -674,15 +611,13 @@ if (props.ayudantes && props.ayudantes.length > 0) {
                 'confirmado': 'fa-check-circle',
                 'en_progreso': 'fa-spinner fa-spin',
                 'finalizado': 'fa-flag-checkered',
-                'cancelado': 'fa-ban',
-                'pendiente_pago': 'fa-hand-holding-usd',
-                'pagado': 'fa-check-double'
+                'cancelado': 'fa-ban'
             };
 
             let ayudantesHtml = '';
             if (props.ayudantes && props.ayudantes.length > 0) {
                 props.ayudantes.forEach(function(nombre) {
-                    ayudantesHtml += `<span class="badge bg-info me-1">👷 ${nombre}</span>`;
+                    ayudantesHtml += `<span class="badge bg-info me-1 mb-1">👷 ${nombre}</span>`;
                 });
             } else {
                 ayudantesHtml = `<span class="text-muted">No asignados</span>`;
@@ -699,7 +634,6 @@ if (props.ayudantes && props.ayudantes.length > 0) {
                         <div class="mb-3 pb-2 border-bottom">
                             <h6 class="text-muted small text-uppercase fw-bold mb-1">🚛 Vehículo</h6>
                             <p class="fw-bold mb-0">${props.vehiculo || 'Sin asignar'}</p>
-                            <small class="text-muted">Tipo: ${props.vehiculo_tipo || 'N/A'}</small>
                         </div>
                         <div class="mb-3 pb-2 border-bottom">
                             <h6 class="text-muted small text-uppercase fw-bold mb-1">👨‍✈️ Chofer</h6>
@@ -708,9 +642,7 @@ if (props.ayudantes && props.ayudantes.length > 0) {
                         </div>
                         <div class="mb-3">
                             <h6 class="text-muted small text-uppercase fw-bold mb-1">👷 Ayudantes</h6>
-                            <div class="d-flex flex-wrap gap-1">
-                                ${ayudantesHtml}
-                            </div>
+                            <div class="d-flex flex-wrap gap-1">${ayudantesHtml}</div>
                             <small class="text-muted">Requeridos: ${props.cantidad_ayudantes || 0}</small>
                         </div>
                     </div>
@@ -732,10 +664,6 @@ if (props.ayudantes && props.ayudantes.length > 0) {
                             <p class="mb-0"><strong>Fecha:</strong> ${props.fecha || 'N/A'}</p>
                             <p class="mb-0"><strong>Horario:</strong> ${props.hora_inicio} - ${props.hora_fin}</p>
                         </div>
-                        <div class="p-3 bg-primary bg-opacity-10 rounded-3 text-center">
-                            <h6 class="text-muted small text-uppercase fw-bold mb-1">💰 Costo Total</h6>
-                            <span class="fw-bold text-primary h4">Bs. ${props.costo ? props.costo.toFixed(2) : '0.00'}</span>
-                        </div>
                     </div>
                 </div>
                 <hr class="my-3">
@@ -749,14 +677,9 @@ if (props.ayudantes && props.ayudantes.length > 0) {
                 </div>
             `;
             
-            $('#eventoModal').modal('show');
+            new bootstrap.Modal(document.getElementById('eventoModal')).show();
         },
-        // ============================================
-        // CLICK EN DÍA - MUESTRA TODOS LOS SERVICIOS
-        // ============================================
         dateClick: function(info) {
-            console.log('📅 Click en día:', info.dateStr);
-            
             const fecha = info.dateStr;
             const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es', {
                 weekday: 'long',
@@ -775,73 +698,80 @@ if (props.ayudantes && props.ayudantes.length > 0) {
             
             if (eventosDelDia.length === 0) {
                 document.getElementById('diaDetalles').innerHTML = `
-                    <div class="text-center py-4">
-                        <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">No hay servicios programados para este día.</p>
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-check fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay servicios programados para este día</h5>
                         @if(auth()->user()->isAdmin() || auth()->user()->isRecepcionista())
-                            <a href="{{ route('servicios.create') }}?fecha=${fecha}" class="btn btn-primary">
-                                <i class="fas fa-plus me-1"></i> Crear Servicio
+                            <a href="{{ route('servicios.create') }}?fecha=${fecha}" class="btn btn-primary mt-3">
+                                <i class="fas fa-plus me-1"></i> Crear Servicio para este día
                             </a>
                         @endif
                     </div>
                 `;
             } else {
-                let html = `<div class="list-group">`;
-                
+                let html = `<p class="text-muted mb-3">
+                    <i class="fas fa-list me-1"></i>
+                    <strong>${eventosDelDia.length}</strong> servicio(s) programado(s) para este día:
+                </p>`;
                 eventosDelDia.sort((a, b) => a.start - b.start);
+                
+                const estadoInfo = {
+                    'pendiente':   { color: '#f59e0b', label: 'Pendiente',   icon: 'fa-clock' },
+                    'confirmado':  { color: '#3b82f6', label: 'Confirmado',  icon: 'fa-check-circle' },
+                    'en_progreso': { color: '#8b5cf6', label: 'En Progreso', icon: 'fa-spinner' },
+                    'finalizado':  { color: '#10b981', label: 'Finalizado',  icon: 'fa-flag-checkered' },
+                    'cancelado':   { color: '#ef4444', label: 'Cancelado',   icon: 'fa-ban' }
+                };
                 
                 eventosDelDia.forEach(evento => {
                     const props = evento.extendedProps;
                     const horaInicio = evento.start ? evento.start.toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'}) : 'N/A';
                     const horaFin = evento.end ? evento.end.toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'}) : 'N/A';
-                    
-                    const estadoBadge = {
-                        'pendiente': 'warning',
-                        'confirmado': 'primary',
-                        'en_progreso': 'secondary',
-                        'finalizado': 'success',
-                        'cancelado': 'danger',
-                        'pendiente_pago': 'danger',
-                        'pagado': 'info'
-                    };
-                    
-                    let ayudantesLista = '';
-                    if (props.ayudantes && props.ayudantes.length > 0) {
-                        props.ayudantes.forEach(function(nombre) {
-                            ayudantesLista += `<span class="badge bg-info me-1">${nombre}</span>`;
-                        });
-                    } else {
-                        ayudantesLista = `<span class="text-muted">Sin ayudantes</span>`;
-                    }
+                    const info = estadoInfo[props.estado] || estadoInfo.pendiente;
                     
                     html += `
-                        <a href="${props.url}" class="list-group-item list-group-item-action">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6 class="mb-1">
-                                        <span class="badge bg-secondary">${horaInicio} - ${horaFin}</span>
-                                        <span class="fw-bold">#${evento.id} - ${props.cliente || 'N/A'}</span>
-                                    </h6>
-                                    <small class="text-muted d-block">
-                                        🚛 ${props.vehiculo || 'Sin asignar'} 
-                                        👨‍✈️ ${props.chofer || 'Sin asignar'}
-                                    </small>
-                                    <div class="mt-1">${ayudantesLista}</div>
-                                </div>
-                                <span class="badge bg-${estadoBadge[props.estado] || 'secondary'}">
-                                    ${props.estado_label || props.estado}
+                        <div class="servicio-card-dia" style="border-left-color: ${info.color};" onclick="window.location.href='${props.url}'">
+                            <div class="servicio-header">
+                                <span class="servicio-horario">
+                                    <i class="far fa-clock me-1"></i>${horaInicio} - ${horaFin}
+                                </span>
+                                <span class="badge" style="background:${info.color}; padding:6px 12px; font-size:0.8rem;">
+                                    <i class="fas ${info.icon} me-1"></i>${info.label}
                                 </span>
                             </div>
-                            <small class="text-muted d-block mt-1">
-                                📍 ${props.origen} → ${props.destino}
-                            </small>
-                        </a>
+                            
+                            <div class="servicio-cliente">
+                                <i class="fas fa-user me-2 text-muted"></i>#${evento.id} · ${props.cliente || 'N/A'}
+                            </div>
+                            
+                            <div class="servicio-info">
+                                ${props.vehiculo && props.vehiculo !== 'Sin asignar' ? `
+                                    <span class="servicio-info-item">
+                                        <i class="fas fa-truck"></i>${props.vehiculo}
+                                    </span>
+                                ` : ''}
+                                ${props.chofer && props.chofer !== 'Sin asignar' ? `
+                                    <span class="servicio-info-item">
+                                        <i class="fas fa-user-circle"></i>${props.chofer}
+                                    </span>
+                                ` : ''}
+                                ${props.ayudantes && props.ayudantes.length > 0 ? `
+                                    <span class="servicio-info-item">
+                                        <i class="fas fa-users"></i>${props.ayudantes.join(', ')}
+                                    </span>
+                                ` : ''}
+                            </div>
+                            
+                            <div class="mt-2 text-muted small">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                ${props.origen} → ${props.destino}
+                            </div>
+                        </div>
                     `;
                 });
                 
                 html += `
-                    </div>
-                    <div class="text-center mt-3">
+                    <div class="text-center mt-3 pt-3 border-top">
                         @if(auth()->user()->isAdmin() || auth()->user()->isRecepcionista())
                             <a href="{{ route('servicios.create') }}?fecha=${fecha}" class="btn btn-primary btn-sm">
                                 <i class="fas fa-plus me-1"></i> Crear Servicio en este día
@@ -856,11 +786,8 @@ if (props.ayudantes && props.ayudantes.length > 0) {
                 document.getElementById('diaDetalles').innerHTML = html;
             }
             
-            $('#diaModal').modal('show');
+            new bootstrap.Modal(document.getElementById('diaModal')).show();
         },
-        // ============================================
-        // SELECCIÓN DE RANGO - DISPONIBILIDAD
-        // ============================================
         selectable: true,
         select: function(info) {
             const fecha = info.startStr.split('T')[0];
@@ -952,7 +879,7 @@ if (props.ayudantes && props.ayudantes.length > 0) {
                     `;
                     
                     document.getElementById('disponibilidadDetalles').innerHTML = html;
-                    $('#disponibilidadModal').modal('show');
+                    new bootstrap.Modal(document.getElementById('disponibilidadModal')).show();
                 });
         },
         selectAllow: function(info) {
@@ -972,15 +899,15 @@ if (props.ayudantes && props.ayudantes.length > 0) {
         allDaySlot: false,
         nowIndicator: true,
         height: 'auto',
-        contentHeight: 600,
-        dayMaxEvents: 4,
+        contentHeight: 750,
+        dayMaxEvents: 3,
         moreLinkText: function(n) {
             return `+ ${n} más`;
         }
     });
     
     calendar.render();
-    console.log('✅ Calendario renderizado correctamente');
+    console.log('✅ Calendario renderizado');
 
     document.getElementById('btn-filtrar').addEventListener('click', function() {
         calendar.refetchEvents();

@@ -4,7 +4,6 @@
 
 @push('styles')
 <style>
-    /* === ESTILOS DE MÉTODOS DE PAGO === */
     .payment-method {
         cursor: pointer;
         padding: 15px;
@@ -40,8 +39,18 @@
         border: 2px solid #0d6efd;
         background: #f0f7ff;
     }
-
-    /* === ESTILOS PARA EL QR - CORREGIDOS === */
+    .btn-confirmar-pago {
+        font-size: 1.1rem;
+        font-weight: 700;
+        padding: 15px 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+        transition: all 0.2s;
+    }
+    .btn-confirmar-pago:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(25, 135, 84, 0.4);
+    }
     .qr-wrapper {
         display: flex;
         flex-direction: column;
@@ -107,7 +116,6 @@
         text-align: center;
     }
 
-    /* === ACCIONES DEL QR === */
     .qr-actions {
         display: flex;
         gap: 6px;
@@ -121,7 +129,6 @@
         white-space: nowrap;
     }
 
-    /* === INFO DEL QR === */
     .qr-info {
         margin-top: 10px;
         padding: 10px 12px;
@@ -150,7 +157,6 @@
         display: inline-block;
     }
 
-    /* === AJUSTES DE FILAS === */
     .qr-row {
         display: flex;
         flex-wrap: wrap;
@@ -171,7 +177,6 @@
         min-width: 200px;
     }
 
-    /* === RESPONSIVE === */
     @media (max-width: 768px) {
         .qr-row {
             flex-direction: column;
@@ -237,9 +242,7 @@
     </div>
 
     <div class="row">
-        <!-- === COLUMNA IZQUIERDA === -->
         <div class="col-lg-4">
-            <!-- Resumen del Servicio -->
             <div class="card shadow-sm mb-3">
                 <div class="card-body">
                     <h6 class="border-bottom pb-2 mb-3">
@@ -264,13 +267,16 @@
                     <hr>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Estado</span>
-                        @if($servicio->estado === 'pagado')
-                            <span class="badge bg-success">{{ $servicio->estado_label }}</span>
-                        @elseif($servicio->estado === 'pendiente_pago')
-                            <span class="badge bg-danger">{{ $servicio->estado_label }}</span>
-                        @else
-                            <span class="badge bg-warning text-dark">{{ $servicio->estado_label }}</span>
-                        @endif
+                        @php
+                            $badgeEstado = [
+                                'pendiente'   => 'secondary',
+                                'confirmado'  => 'primary',
+                                'en_progreso' => 'warning',
+                                'finalizado'  => 'success',
+                                'cancelado'   => 'danger',
+                            ][$servicio->estado] ?? 'secondary';
+                        @endphp
+                        <span class="badge bg-{{ $badgeEstado }}">{{ $servicio->estado_label }}</span>
                     </div>
                     <div class="d-flex justify-content-between">
                         <span class="text-muted"><strong>Total a Pagar</strong></span>
@@ -278,42 +284,31 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Estado de Pago -->
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h6 class="border-bottom pb-2 mb-3">
                         <i class="fas fa-clock me-2 text-primary"></i>Estado de Pago
                     </h6>
                     <div class="text-center py-2">
-                        @if($servicio->estado === 'pagado')
+                        @if($servicio->estado_pago === 'pagado')
                             <span class="badge bg-success" style="font-size:1rem; padding:8px 20px;">
                                 <i class="fas fa-check-circle me-2"></i> Pagado
                             </span>
                             <p class="text-muted small mt-2 mb-0">
                                 Método: {{ $servicio->metodo_pago_label ?? 'No especificado' }}
                             </p>
-                        @elseif($servicio->estado === 'pendiente_pago')
-                            <span class="badge bg-danger" style="font-size:1rem; padding:8px 20px;">
-                                <i class="fas fa-exclamation-triangle me-2"></i> Pendiente de Pago
-                            </span>
-                            <p class="text-muted small mt-2 mb-0">
-                                El pago está pendiente. Registre el pago para finalizar.
-                            </p>
                         @else
-                            <span class="badge bg-warning text-dark" style="font-size:1rem; padding:8px 20px;">
-                                <i class="fas fa-hourglass-half me-2"></i> Pendiente
+                            <span class="badge bg-danger" style="font-size:1rem; padding:8px 20px;">
+                                <i class="fas fa-hourglass-half me-2"></i> Pendiente de Pago
                             </span>
                             <p class="text-muted small mt-2 mb-0">
-                                El pago se realiza al finalizar el servicio
+                                Cuando el cliente haya pagado, presiona "Confirmar Pago Recibido"
                             </p>
                         @endif
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- === COLUMNA DERECHA === -->
         <div class="col-lg-8">
             <div class="card shadow-sm mb-3">
                 <div class="card-body">
@@ -321,16 +316,15 @@
                         <i class="fas fa-hand-holding-usd me-2 text-primary"></i>Seleccionar Método de Pago
                     </h6>
 
-                    <!-- Botones de selección -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
+                    <div class="row g-3 mb-4 justify-content-center">
+                        <div class="col-md-5">
                             <div class="payment-method active" onclick="selectPayment('efectivo')">
                                 <i class="fas fa-money-bill-wave icon-efectivo"></i>
                                 <h6 class="mb-0">Efectivo</h6>
                                 <small class="text-muted">Pago en físico</small>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-5">
                             <div class="payment-method" onclick="selectPayment('qr')">
                                 <i class="fas fa-qrcode icon-qr"></i>
                                 <h6 class="mb-0">Código QR</h6>
@@ -339,7 +333,6 @@
                         </div>
                     </div>
 
-                    <!-- === PANEL DE EFECTIVO === -->
                     <div id="panel-efectivo" class="config-card active-card">
                         <div class="row align-items-center">
                             <div class="col-md-7">
@@ -347,39 +340,25 @@
                                     <i class="fas fa-coins me-2 text-success"></i>Pago en Efectivo
                                 </h6>
                                 <p class="text-muted small mb-0">
-                                    El cliente paga al finalizar el servicio. El sistema registra el pago y genera el comprobante.
+                                    El cliente entrega el dinero al chofer. Cuando lo tengas en la mano, presiona el botón verde para registrar el pago.
                                 </p>
-                                @if($servicio->estado !== 'pagado' && $servicio->estado !== 'cancelado')
-                                    <div class="mt-2">
-                                        <span class="badge bg-info">
-                                            <i class="fas fa-info-circle me-1"></i> 
-                                            Estado actual: {{ $servicio->estado_label }}
-                                        </span>
-                                    </div>
-                                @endif
                             </div>
                             <div class="col-md-5 text-end">
-                                @if($servicio->estado === 'pagado')
+                                @if($servicio->estado_pago === 'pagado')
                                     <span class="badge bg-success" style="font-size:1rem; padding:8px 20px;">
                                         <i class="fas fa-check-circle me-2"></i> Ya pagado
                                     </span>
                                 @else
-                                    <button class="btn btn-success w-100" onclick="registrarPago('efectivo')">
-                                        <i class="fas fa-check me-1"></i> Registrar Pago
+                                    <button class="btn btn-success btn-confirmar-pago w-100"
+                                            onclick="abrirModalConfirmar('efectivo')">
+                                        <i class="fas fa-check-circle me-2"></i> Confirmar Pago Recibido
                                     </button>
-                                    <small class="text-muted d-block mt-1">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        El servicio se marcará como Pagado
-                                    </small>
                                 @endif
                             </div>
                         </div>
                     </div>
-
-                    <!-- === PANEL DE QR === -->
                     <div id="panel-qr" class="config-card" style="display: none;">
                         <div class="qr-row">
-                            <!-- QR -->
                             <div class="qr-col-left">
                                 <div class="qr-wrapper">
                                     <div class="qr-container">
@@ -389,7 +368,7 @@
                                                 $imagenUrl = null;
                                                 $urlQr = null;
                                                 $rutaFisica = null;
-                                                
+
                                                 if (isset($qr) && $qr->imagen_qr) {
                                                     $rutaFisica = storage_path('app/public/' . $qr->imagen_qr);
                                                     if (file_exists($rutaFisica)) {
@@ -397,7 +376,7 @@
                                                         $imagenUrl = asset('storage/' . $qr->imagen_qr);
                                                     }
                                                 }
-                                                
+
                                                 if (isset($qr) && $qr->url_qr) {
                                                     $urlQr = $qr->url_qr;
                                                 }
@@ -419,7 +398,6 @@
                                 </div>
                             </div>
 
-                            <!-- Info -->
                             <div class="qr-col-right">
                                 <h6 class="mb-1">
                                     <i class="fas fa-qrcode me-2 text-primary"></i>Pago con Código QR
@@ -427,7 +405,7 @@
                                 <p class="text-muted small mb-2">
                                     El cliente escanea el código QR con su aplicación bancaria y realiza el pago desde su celular.
                                 </p>
-                                
+
                                 <div class="qr-actions">
                                     @if($tieneImagen && $imagenUrl)
                                         <a href="{{ $imagenUrl }}" target="_blank" class="btn btn-sm btn-primary">
@@ -455,9 +433,18 @@
                                             <span class="text-muted d-block mt-1">
                                                 <i class="far fa-calendar-alt me-1"></i> Vencimiento: {{ now()->addDays(7)->format('d/m/Y') }}
                                             </span>
-                                            <span class="text-muted d-block">
-                                                Banco Nacional · Cuenta: 123-4567890
-                                            </span>
+                                        </small>
+                                    </div>
+                                @endif
+                                @if($servicio->estado_pago !== 'pagado')
+                                    <div class="mt-3">
+                                        <button class="btn btn-success btn-confirmar-pago w-100"
+                                                onclick="abrirModalConfirmar('qr')">
+                                            <i class="fas fa-check-circle me-2"></i> Confirmar Pago Recibido
+                                        </button>
+                                        <small class="text-muted d-block mt-2 text-center">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Presiona cuando el cliente te muestre el comprobante del pago por QR.
                                         </small>
                                     </div>
                                 @endif
@@ -466,8 +453,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- === HISTORIAL DE PAGOS === -->
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h6 class="border-bottom pb-2 mb-3">
@@ -496,11 +481,11 @@
                                         @elseif($item->metodo_pago === 'qr')
                                             <i class="fas fa-qrcode text-primary me-1"></i> QR
                                         @else
-                                            <i class="fas fa-spinner me-1"></i> Pendiente
+                                            <span class="text-muted">—</span>
                                         @endif
                                     </td>
                                     <td>
-                                        @if($item->estado === 'pagado')
+                                        @if($item->estado_pago === 'pagado')
                                             <span class="badge bg-success">Pagado</span>
                                         @else
                                             <span class="badge bg-danger">Pendiente</span>
@@ -520,6 +505,48 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="modalConfirmarPago" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h6 class="modal-title">
+                    <i class="fas fa-check-circle me-2"></i>Confirmar Pago Recibido
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p class="mb-3">¿Confirmas que el cliente <strong>{{ $servicio->cliente->nombre_completo }}</strong> realizó el pago?</p>
+
+                <div class="alert alert-info mb-3">
+                    <div class="mb-2">
+                        <small class="text-muted">Total a pagar</small>
+                        <div class="h4 mb-0 text-primary">
+                            {{ number_format($servicio->costo_total, 2) }} Bs
+                        </div>
+                    </div>
+                    <hr class="my-2">
+                    <div>
+                        <small class="text-muted">Método de pago</small>
+                        <div class="h6 mb-0" id="metodoModalTexto">Efectivo</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning mb-0 small">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Esta acción <strong>no se puede deshacer</strong>. El servicio quedará marcado como pagado.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-success" onclick="confirmarPago()">
+                    <i class="fas fa-check me-1"></i> Sí, ya pagó
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @push('scripts')
 <script>
@@ -531,52 +558,69 @@ function selectPayment(method) {
     document.getElementById('panel-qr').classList.remove('active-card');
 
     if (method === 'efectivo') {
-        document.querySelector('.payment-method:first-child').classList.add('active');
+        document.querySelectorAll('.payment-method')[0].classList.add('active');
         document.getElementById('panel-efectivo').style.display = 'block';
         document.getElementById('panel-efectivo').classList.add('active-card');
     } else if (method === 'qr') {
-        document.querySelector('.payment-method:last-child').classList.add('active');
+        document.querySelectorAll('.payment-method')[1].classList.add('active');
         document.getElementById('panel-qr').style.display = 'block';
         document.getElementById('panel-qr').classList.add('active-card');
     }
 }
+let metodoSeleccionado = 'efectivo';
 
-function registrarPago(metodo) {
+function abrirModalConfirmar(metodo) {
+    metodoSeleccionado = metodo;
+
+    const nombreMetodo = {
+        'efectivo': 'Efectivo',
+        'qr': 'Código QR'
+    }[metodo] || metodo;
+
+    document.getElementById('metodoModalTexto').textContent = nombreMetodo;
+
+    const modal = new bootstrap.Modal(document.getElementById('modalConfirmarPago'));
+    modal.show();
+}
+function confirmarPago() {
     const servicioId = {{ $servicio->id }};
     const monto = {{ $servicio->costo_total }};
-    const estadoActual = '{{ $servicio->estado }}';
-    
-    if (estadoActual === 'pagado') {
-        alert('⚠️ Este servicio ya está pagado');
-        return;
-    }
-    
-    if (confirm('¿Registrar pago de ' + monto.toFixed(2) + ' Bs por ' + metodo + '?')) {
-        fetch('{{ route("servicios.pago", $servicio->id) }}', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-                metodo_pago: metodo, 
-                monto: monto 
-            })
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Registrando...';
+
+    fetch(`/pagos/${servicioId}/registrar`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            metodo_pago: metodoSeleccionado,
+            monto: monto
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('✅ Pago registrado exitosamente');
-                location.reload();
-            } else {
-                alert('❌ ' + (data.message || 'Error al registrar pago'));
-            }
-        })
-        .catch(error => {
-            console.error('❌ Error:', error);
-            alert('❌ Error de conexión: ' + error.message);
-        });
-    }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('modalConfirmarPago')).hide();
+            alert('✅ Pago registrado exitosamente');
+            window.location.href = '{{ route("servicios.show", $servicio) }}';
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            alert('❌ ' + (data.message || 'Error al registrar pago'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        alert('❌ Error de conexión');
+    });
 }
 </script>
 @endpush

@@ -35,8 +35,12 @@
                                 <span class="badge bg-danger">Administrador</span>
                             @elseif($user->role === 'recepcionista')
                                 <span class="badge bg-primary">Recepcionista</span>
-                            @else
+                            @elseif($user->role === 'chofer')
                                 <span class="badge bg-warning text-dark">Chofer</span>
+                            @elseif($user->role === 'ayudante')
+                                <span class="badge bg-info text-dark">Ayudante</span>
+                            @else
+                                <span class="badge bg-secondary">{{ $user->role }}</span>
                             @endif
                         </strong>
                     </div>

@@ -16,11 +16,11 @@
             <form action="{{ route('users.update', $user) }}" method="POST">
                 @csrf
                 @method('PUT')
-                
+
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label required">Nombre Completo</label>
-                        <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" 
+                        <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
                                value="{{ old('name', $user->name) }}" required>
                         @error('name')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -28,7 +28,7 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label required">Email</label>
-                        <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" 
+                        <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
                                value="{{ old('email', $user->email) }}" required>
                         @error('email')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -40,9 +40,11 @@
                     <label class="form-label required">Rol</label>
                     <select name="role" class="form-select @error('role') is-invalid @enderror" required>
                         <option value="">Seleccione un rol...</option>
-                        <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Administrador</option>
-                        <option value="recepcionista" {{ old('role', $user->role) == 'recepcionista' ? 'selected' : '' }}>Recepcionista</option>
-                        <option value="chofer" {{ old('role', $user->role) == 'chofer' ? 'selected' : '' }}>Chofer</option>
+                        @foreach($roles as $key => $label)
+                            <option value="{{ $key }}" {{ old('role', $user->role) == $key ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
                     </select>
                     @error('role')
                         <div class="invalid-feedback">{{ $message }}</div>

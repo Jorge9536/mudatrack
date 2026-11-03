@@ -12,13 +12,13 @@ class TwoFactorController extends Controller
         $this->middleware('auth');
     }
 
-    // Mostrar formulario de verificación 2FA
+
     public function showVerifyForm()
     {
         return view('auth.verify-2fa');
     }
 
-    // Verificar código 2FA
+
     public function verify(Request $request)
     {
         $request->validate([
@@ -43,7 +43,6 @@ class TwoFactorController extends Controller
         return back()->with('error', '❌ Código inválido. Intenta de nuevo.');
     }
 
-    // Verificar código de recuperación
     public function verifyRecoveryCode(Request $request)
     {
         $request->validate([
@@ -66,7 +65,6 @@ class TwoFactorController extends Controller
         return back()->with('error', '❌ Código de recuperación inválido.');
     }
 
-    // Mostrar configuración de 2FA
     public function showSetup()
     {
         $user = auth()->user();
@@ -76,7 +74,7 @@ class TwoFactorController extends Controller
         }
 
         try {
-            $google2fa = app('pragmarx.google2fa'); // ← Obtener instancia
+            $google2fa = app('pragmarx.google2fa');
             $secret = $google2fa->generateSecretKey();
             
             $qrCode = $google2fa->getQRCodeInline(
@@ -94,7 +92,6 @@ class TwoFactorController extends Controller
         }
     }
 
-    // Activar 2FA
     public function enable(Request $request)
     {
         $request->validate([
@@ -109,7 +106,7 @@ class TwoFactorController extends Controller
         }
 
         try {
-            $google2fa = app('pragmarx.google2fa'); // ← Obtener instancia
+            $google2fa = app('pragmarx.google2fa');
             
             if ($google2fa->verifyKey($secret, $request->code)) {
                 $codes = $this->generateRecoveryCodes();
@@ -133,7 +130,6 @@ class TwoFactorController extends Controller
         }
     }
 
-    // Desactivar 2FA
     public function disable(Request $request)
     {
         $request->validate([
@@ -153,7 +149,7 @@ class TwoFactorController extends Controller
             ->with('success', '2FA desactivado correctamente.');
     }
 
-    // Mostrar códigos de recuperación
+
     public function showRecoveryCodes()
     {
         $user = auth()->user();

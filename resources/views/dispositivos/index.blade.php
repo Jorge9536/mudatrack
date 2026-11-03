@@ -65,8 +65,6 @@
                                 <a href="{{ route('dispositivos.edit', $dispositivo) }}" class="btn btn-sm btn-warning" title="Editar">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                
-                                {{-- ELIMINAR DE BD --}}
                                 <form action="{{ route('dispositivos.destroy', $dispositivo) }}" method="POST" class="d-inline">
                                     @csrf
                                     @method('DELETE')
@@ -95,15 +93,11 @@
 
 @push('scripts')
 <script>
-// ============================================
-// CARGAR ÚLTIMA CONEXIÓN DESDE FIREBASE
-// ============================================
+
 document.addEventListener('DOMContentLoaded', function() {
     const celdas = document.querySelectorAll('.ultima-conexion');
     
     if (celdas.length === 0) return;
-    
-    // Obtener todas las ubicaciones de Firebase
     fetch('{{ route("gps.firebase.ubicaciones") }}')
         .then(response => response.json())
         .then(data => {
@@ -149,10 +143,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 });
-
-// ============================================
-// TIEMPO RELATIVO
-// ============================================
 function timeAgo(fecha) {
     if (!fecha) return 'Nunca';
     const ahora = new Date();

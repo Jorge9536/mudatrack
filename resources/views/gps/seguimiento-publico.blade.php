@@ -95,8 +95,6 @@
     </style>
 </head>
 <body>
-
-    {{-- HEADER --}}
     <div class="header-public">
         <h1><i class="fas fa-truck"></i> MudaTrack</h1>
         <p>Seguimiento en tiempo real de su mudanza</p>
@@ -104,12 +102,8 @@
             <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i> EN VIVO
         </div>
     </div>
-
-    {{-- CONTENIDO --}}
     <div class="container-fluid p-3">
         <div class="row">
-            
-            {{-- MAPA --}}
             <div class="col-lg-8">
                 <div id="mapa"></div>
                 
@@ -138,11 +132,7 @@
                     </div>
                 </div>
             </div>
-
-            {{-- INFORMACIÓN --}}
             <div class="col-lg-4">
-                
-                {{-- DATOS DEL SERVICIO --}}
                 <div class="info-card">
                     <h6><i class="fas fa-info-circle me-2"></i>Mi Servicio</h6>
                     <div class="mb-2">
@@ -162,8 +152,6 @@
                         <div class="value">{{ $servicio->fecha_servicio->format('d/m/Y') }}</div>
                     </div>
                 </div>
-
-                {{-- CHOFER --}}
                 @if($servicio->chofer)
                 <div class="info-card">
                     <h6><i class="fas fa-user-circle me-2"></i>Mi Chofer</h6>

@@ -10,8 +10,6 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// 🔥 Actualizar estados de servicios cada minuto
 Schedule::command(ActualizarEstadosServicios::class)->everyMinute();
 
-// 🔥 Sincronizar ubicaciones de Firestore cada minuto
 Schedule::command(SyncUbicacionesFirestore::class)->everyMinute();

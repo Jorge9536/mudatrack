@@ -21,9 +21,6 @@ class ConfiguracionQr extends Model
         'fecha_actualizacion' => 'datetime'
     ];
 
-    /**
-     * Obtener la URL de la imagen
-     */
     public function getImagenUrlAttribute()
     {
         if ($this->imagen_qr) {
@@ -35,12 +32,8 @@ class ConfiguracionQr extends Model
         return null;
     }
 
-    /**
-     * Obtener la URL del QR (imagen o URL externa)
-     */
     public function getQrUrlAttribute()
     {
-        // Prioridad: imagen sobre URL
         if ($this->imagen_qr && $this->imagen_url) {
             return $this->imagen_url;
         }
@@ -52,12 +45,8 @@ class ConfiguracionQr extends Model
         return null;
     }
 
-    /**
-     * Verificar si tiene QR configurado
-     */
     public function tieneQr(): bool
     {
-        // Verificar si tiene imagen y existe físicamente
         if ($this->imagen_qr) {
             $path = storage_path('app/public/' . $this->imagen_qr);
             if (file_exists($path)) {
@@ -65,7 +54,6 @@ class ConfiguracionQr extends Model
             }
         }
         
-        // Verificar si tiene URL
         if (!empty($this->url_qr)) {
             return true;
         }

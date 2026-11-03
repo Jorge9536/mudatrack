@@ -90,7 +90,6 @@
     </div>
 
     <div class="row">
-        <!-- Mapa -->
         <div class="col-lg-9">
             <div class="card shadow-sm">
                 <div class="card-body p-0">
@@ -99,7 +98,6 @@
             </div>
         </div>
 
-        <!-- Panel lateral -->
         <div class="col-lg-3">
             <div class="card shadow-sm">
                 <div class="card-header bg-white">
@@ -116,8 +114,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Estadísticas rápidas -->
             <div class="card shadow-sm mt-3">
                 <div class="card-body">
                     <div class="row text-center">
@@ -137,7 +133,6 @@
                 </div>
             </div>
 
-            <!-- Leyenda -->
             <div class="card shadow-sm mt-3">
                 <div class="card-body">
                     <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>Leyenda</h6>
@@ -170,7 +165,6 @@
     let updateInterval;
     let segundos = 0;
 
-    // Iconos personalizados por estado
     function getVehicleIcon(estado, color = '#0d6efd') {
         const colors = {
             'en_progreso': '#28a745',
@@ -197,7 +191,6 @@
         });
     }
 
-    // Inicializar mapa
     function initMap() {
         mapAdmin = L.map('mapaAdmin').setView([-16.5, -68.13], 12);
         
@@ -205,7 +198,6 @@
             attribution: '© OpenStreetMap contributors'
         }).addTo(mapAdmin);
 
-        // Evento para cerrar popups al hacer clic en el mapa
         mapAdmin.on('click', function() {
             if (selectedMarker) {
                 selectedMarker.closePopup();
@@ -214,7 +206,6 @@
         });
     }
 
-    // Centrar mapa en todos los vehículos
     function centrarMapa() {
         const markersList = Object.values(markers);
         if (markersList.length > 0) {
@@ -223,7 +214,6 @@
         }
     }
 
-    // Actualizar ubicaciones desde API
     function actualizarUbicaciones() {
         fetch('{{ route("api.gps.vehiculos") }}')
             .then(response => response.json())
@@ -244,9 +234,7 @@
             });
     }
 
-    // Actualizar mapa
     function actualizarMapa(vehiculos) {
-        // Limpiar marcadores anteriores
         Object.keys(markers).forEach(key => {
             if (markers[key]) {
                 mapAdmin.removeLayer(markers[key]);
@@ -303,13 +291,10 @@
                         </small>
                     </div>
                 `);
-
-            // Guardar referencia
             markers[vehiculo.id] = marker;
         });
     }
 
-    // Actualizar lista de vehículos
     function actualizarLista(vehiculos) {
         const lista = document.getElementById('lista-vehiculos');
         document.getElementById('total-vehiculos').textContent = vehiculos.length;
@@ -371,8 +356,6 @@
 
         lista.innerHTML = html;
     }
-
-    // Actualizar estadísticas
     function actualizarEstadisticas(vehiculos) {
         let enRuta = 0, disponibles = 0, inactivos = 0;
         
@@ -386,17 +369,12 @@
         document.getElementById('stats-disponibles').textContent = disponibles;
         document.getElementById('stats-inactivos').textContent = inactivos;
     }
-
-    // Centrar en un vehículo específico
     function centrarEnVehiculo(id) {
         if (markers[id]) {
             markers[id].openPopup();
             mapAdmin.flyTo(markers[id].getLatLng(), 16);
-            
-            // Resaltar en la lista
             document.querySelectorAll('.vehiculo-item').forEach(el => el.classList.remove('active'));
             const items = document.querySelectorAll('.vehiculo-item');
-            // Buscar el elemento correspondiente (por índice)
             const vehiculos = Object.keys(markers);
             const index = vehiculos.indexOf(id);
             if (index >= 0 && items[index]) {
@@ -404,8 +382,6 @@
             }
         }
     }
-
-    // Mostrar error
     function mostrarError(mensaje) {
         const lista = document.getElementById('lista-vehiculos');
         lista.innerHTML = `
@@ -416,25 +392,18 @@
         `;
     }
 
-    // Inicializar
     document.addEventListener('DOMContentLoaded', function() {
         initMap();
         actualizarUbicaciones();
-
-        // Actualizar cada 10 segundos
         updateInterval = setInterval(() => {
             actualizarUbicaciones();
             segundos = 0;
         }, 10000);
-
-        // Actualizar contador de segundos
         setInterval(() => {
             segundos++;
             document.getElementById('intervalo-segundos').textContent = 10 - (segundos % 10);
         }, 1000);
     });
-
-    // Limpiar al salir
     window.addEventListener('beforeunload', function() {
         if (updateInterval) {
             clearInterval(updateInterval);

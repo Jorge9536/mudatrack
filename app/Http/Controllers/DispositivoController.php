@@ -86,9 +86,6 @@ public function update(Request $request, Dispositivo $dispositivo)
             ->with('success', '✅ Dispositivo eliminado correctamente.');
     }
 
-    /**
-     * 🔥 OBTENER DISPOSITIVOS DE FIRESTORE
-     */
     public function obtenerDeFirestore()
     {
         try {
@@ -135,9 +132,6 @@ public function update(Request $request, Dispositivo $dispositivo)
         }
     }
 
-    /**
-     * 🔥 ELIMINAR DISPOSITIVO DE FIRESTORE (por modelo)
-     */
     public function eliminarDeFirestore(Dispositivo $dispositivo)
     {
         try {
@@ -177,10 +171,6 @@ public function update(Request $request, Dispositivo $dispositivo)
         }
     }
 
-    /**
-     * 🔥 ELIMINAR DISPOSITIVO DE FIRESTORE POR SU ID
-     * (sin necesidad de que esté registrado en la BD local)
-     */
     public function eliminarDeFirestorePorId($dispositivoId)
     {
         try {
@@ -219,9 +209,6 @@ public function update(Request $request, Dispositivo $dispositivo)
         }
     }
 
-    /**
-     * Función auxiliar para extraer valores de Firestore
-     */
     private function getFieldValue($fields, $fieldName, $type)
     {
         if (!isset($fields[$fieldName])) {

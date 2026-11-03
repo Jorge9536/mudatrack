@@ -20,10 +20,6 @@ class ChoferApiController extends Controller
         $this->firestore = $firestore;
     }
 
-    /**
-     * Perfil del chofer autenticado.
-     * GET /api/chofer/perfil
-     */
     public function perfil(Request $request)
     {
         $user = $request->user();
@@ -48,14 +44,6 @@ class ChoferApiController extends Controller
         ]);
     }
 
-    /**
-     * Lista de servicios asignados al chofer.
-     * GET /api/chofer/servicios
-     *
-     * Query params opcionales:
-     *   ?estado=confirmado|en_progreso|finalizado
-     *   ?fecha=YYYY-MM-DD
-     */
     public function servicios(Request $request)
     {
         $chofer = $request->user()->chofer;
@@ -63,19 +51,15 @@ class ChoferApiController extends Controller
         $query = Servicio::with(['cliente', 'vehiculo', 'ayudantes'])
             ->where('chofer_id', $chofer->id);
 
-        // Filtrar por estado
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
         } else {
-            // Por defecto: servicios activos (no cancelados ni viejos)
             $query->whereIn('estado', ['pendiente', 'confirmado', 'en_progreso']);
         }
 
-        // Filtrar por fecha
         if ($request->filled('fecha')) {
             $query->whereDate('fecha_servicio', $request->fecha);
         } else {
-            // Por defecto: desde ayer hasta 7 días adelante
             $query->whereDate('fecha_servicio', '>=', now()->subDay()->format('Y-m-d'))
                   ->whereDate('fecha_servicio', '<=', now()->addDays(7)->format('Y-m-d'));
         }
@@ -93,10 +77,6 @@ class ChoferApiController extends Controller
         ]);
     }
 
-    /**
-     * Detalle de un servicio.
-     * GET /api/chofer/servicios/{id}
-     */
     public function detalleServicio(Request $request, $id)
     {
         $chofer = $request->user()->chofer;
@@ -118,10 +98,6 @@ class ChoferApiController extends Controller
         ]);
     }
 
-    /**
-     * Aceptar un servicio.
-     * POST /api/chofer/servicios/{id}/aceptar
-     */
     public function aceptarServicio(Request $request, $id)
     {
         $chofer = $request->user()->chofer;
@@ -140,7 +116,6 @@ class ChoferApiController extends Controller
 
         $servicio->update(['estado' => 'confirmado']);
 
-        // Replicar a Firestore
         $this->replicarServicioAFirestore($servicio);
 
         return response()->json([
@@ -150,10 +125,6 @@ class ChoferApiController extends Controller
         ]);
     }
 
-    /**
-     * Rechazar un servicio.
-     * POST /api/chofer/servicios/{id}/rechazar
-     */
     public function rechazarServicio(Request $request, $id)
     {
         $request->validate([
@@ -191,11 +162,6 @@ class ChoferApiController extends Controller
             'message' => 'Servicio rechazado. El administrador fue notificado.',
         ]);
     }
-
-    /**
-     * Iniciar un servicio.
-     * POST /api/chofer/servicios/{id}/iniciar
-     */
     public function iniciarServicio(Request $request, $id)
     {
         $chofer = $request->user()->chofer;
@@ -222,11 +188,6 @@ class ChoferApiController extends Controller
             'data' => $this->formatearServicio($servicio->fresh()),
         ]);
     }
-
-    /**
-     * Finalizar un servicio.
-     * POST /api/chofer/servicios/{id}/finalizar
-     */
     public function finalizarServicio(Request $request, $id)
     {
         $chofer = $request->user()->chofer;
@@ -247,7 +208,6 @@ class ChoferApiController extends Controller
         try {
             $servicio->update(['estado' => 'finalizado']);
 
-            // Si no está pagado, crear deuda
             if (!$servicio->estaPagado()) {
                 if (!$servicio->deuda) {
                     Deuda::create([
@@ -279,10 +239,6 @@ class ChoferApiController extends Controller
         }
     }
 
-    /**
-     * Registrar pago en efectivo.
-     * POST /api/chofer/servicios/{id}/pago-efectivo
-     */
     public function pagoEfectivo(Request $request, $id)
     {
         $request->validate([
@@ -323,8 +279,6 @@ class ChoferApiController extends Controller
             }
 
             DB::commit();
-
-            // 🔥 IMPORTANTE: Escribir a Firestore para notificar al sistema principal
             $this->firestore->set('pagos_efectivo', (string) $servicio->id, [
                 'servicio_id' => $servicio->id,
                 'chofer_id' => $chofer->id,
@@ -354,13 +308,6 @@ class ChoferApiController extends Controller
         }
     }
 
-    // ============================================
-    // HELPERS
-    // ============================================
-
-    /**
-     * Formatear un servicio para la respuesta JSON.
-     */
     protected function formatearServicio(Servicio $servicio, bool $conDetalle = false): array
     {
         $data = [
@@ -416,9 +363,6 @@ class ChoferApiController extends Controller
         return $data;
     }
 
-    /**
-     * Replicar el servicio a Firestore para que el APK y el sistema principal lo vean.
-     */
     protected function replicarServicioAFirestore(Servicio $servicio): void
     {
         try {

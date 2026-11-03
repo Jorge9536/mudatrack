@@ -79,10 +79,6 @@ class ServicioObserver
             $this->guardarError($servicio->id, $e);
         }
     }
-
-    /**
-     * Guardar error en archivo separado SIN problemas de codificación
-     */
     protected function guardarError(int $servicioId, \Throwable $e): void
     {
         $logFile = storage_path('logs/firestore_error.log');

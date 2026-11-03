@@ -18,10 +18,6 @@
                 <div class="card-body">
                     <form action="{{ route('servicios.store') }}" method="POST" id="formServicio">
                         @csrf
-
-                        <!-- ========================================== -->
-                        <!-- CAMPOS OCULTOS PARA FECHAS DEL CALENDARIO  -->
-                        <!-- ========================================== -->
                         @if(isset($fechaSeleccionada) && $fechaSeleccionada)
                             <input type="hidden" name="fecha_servicio" value="{{ $fechaSeleccionada }}">
                         @endif
@@ -33,10 +29,6 @@
                         @if(isset($horaFinSeleccionada) && $horaFinSeleccionada)
                             <input type="hidden" name="hora_fin" value="{{ $horaFinSeleccionada }}">
                         @endif
-
-                        <!-- ========================================== -->
-                        <!-- CAMPOS OCULTOS PARA COORDENADAS Y CIUDAD  -->
-                        <!-- ========================================== -->
                         <input type="hidden" id="lat_origen" name="lat_origen" value="">
                         <input type="hidden" id="lng_origen" name="lng_origen" value="">
                         <input type="hidden" id="lat_destino" name="lat_destino" value="">
@@ -44,9 +36,6 @@
                         <input type="hidden" id="ciudad_origen" name="ciudad_origen" value="">
                         <input type="hidden" id="ciudad_destino" name="ciudad_destino" value="">
 
-                        <!-- ========================================== -->
-                        <!-- ALERTA DE HORARIO SELECCIONADO             -->
-                        <!-- ========================================== -->
                         @if(isset($fechaSeleccionada) && $fechaSeleccionada)
                             <div class="alert alert-info alert-dismissible fade show" role="alert">
                                 <i class="fas fa-calendar-check"></i>
@@ -59,9 +48,6 @@
                             </div>
                         @endif
 
-                        <!-- ========================================== -->
-                        <!-- DATOS DEL CLIENTE -->
-                        <!-- ========================================== -->
                         <h6 class="border-bottom pb-2 mb-3">
                             <i class="fas fa-user me-2 text-primary"></i>Datos del Cliente
                         </h6>
@@ -91,14 +77,10 @@
                             @enderror
                         </div>
 
-                        <!-- ========================================== -->
-                        <!-- DATOS DEL SERVICIO -->
-                        <!-- ========================================== -->
                         <h6 class="border-bottom pb-2 mb-3 mt-4">
                             <i class="fas fa-map-marked-alt me-2 text-primary"></i>Datos del Servicio
                         </h6>
                         
-                        <!-- 🔥 MAPA PARA SELECCIONAR ORIGEN Y DESTINO -->
                         <div class="mb-3">
                             <label class="form-label">Selecciona en el mapa</label>
                             <div id="mapa" style="height: 350px; border-radius: 8px; border: 2px solid #dee2e6;"></div>
@@ -127,7 +109,6 @@
                             </div>
                         </div>
 
-                        <!-- 🔥 CAMPO DISTANCIA OCULTO (para la cotización) -->
                         <input type="hidden" name="distancia_km" id="distancia" value="0">
 
                         <div class="row">
@@ -193,10 +174,6 @@
                                 </select>
                             </div>
                         </div>
-
-                        <!-- ========================================== -->
-                        <!-- LISTA DE BIENES -->
-                        <!-- ========================================== -->
                         <h6 class="border-bottom pb-2 mb-3 mt-4">
                             <i class="fas fa-boxes me-2 text-primary"></i>Lista de Bienes
                         </h6>
@@ -237,10 +214,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- ========================================== -->
-        <!-- RESUMEN DE COTIZACIÓN -->
-        <!-- ========================================== -->
         @if(auth()->user()->isAdmin())
         <div class="col-lg-5">
             <div class="card shadow-sm sticky-top" style="top: 20px;">
@@ -276,10 +249,8 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// ============================================
-// 🔍 BUSCADOR DE CLIENTES
-// ============================================
 document.addEventListener('DOMContentLoaded', function() {
     const buscador = document.getElementById('buscadorCliente');
     const selectClientes = document.getElementById('clienteSelect');
@@ -323,9 +294,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ============================================
-// 🔥 MAPA INTERACTIVO
-// ============================================
 document.addEventListener('DOMContentLoaded', function() {
     const centroLaPaz = [-16.498, -68.135];
     
@@ -354,7 +322,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error al calcular distancia:', error);
                 calcularDistanciaManual(origenCoords, destinoCoords);
             });
     }
@@ -372,22 +339,14 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('distancia').value = distancia.toFixed(1);
         calcularCotizacion();
     }
-
-    // ============================================
-    // 🔥 GEOCÓDIGO CON NOMINATIM (CORREGIDO)
-    // ============================================
+    
     function geocodificar(lat, lng, campo) {
         const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18`;
-        
-        console.log('📡 Geocodificando:', campo, lat, lng);
         
         fetch(url)
             .then(response => response.json())
             .then(data => {
-                console.log('📡 Respuesta de Nominatim:', data);
-                
                 if (data.display_name) {
-                    // ✅ ACTUALIZAR EL CAMPO CON LA DIRECCIÓN COMPLETA
                     document.getElementById(campo).value = data.display_name;
                     
                     let ciudad = null;
@@ -406,21 +365,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                     
-                    console.log('📍 Ciudad detectada:', ciudad);
-                    
                     const ciudadInput = document.getElementById('ciudad_' + campo);
                     if (ciudadInput) {
                         ciudadInput.value = ciudad || 'La Paz';
                     }
-                    
-                    // ✅ ESPERAR A QUE SE ACTUALICE EL DOM Y RECALCULAR
                     setTimeout(function() {
                         calcularCotizacion();
                     }, 300);
                 }
             })
             .catch(error => {
-                console.error('❌ Error al geocodificar:', error);
                 const ciudad = determinarZonaPorCoordenadas(lat, lng);
                 const ciudadInput = document.getElementById('ciudad_' + campo);
                 if (ciudadInput) {
@@ -432,9 +386,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // ============================================
-    // 📍 DETECTAR ZONA POR COORDENADAS
-    // ============================================
     function determinarZonaPorCoordenadas(lat, lng) {
         if (lat >= -16.53 && lat <= -16.43 && lng >= -68.22 && lng <= -68.12) {
             return 'El Alto';
@@ -442,9 +393,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return 'La Paz';
     }
 
-    // ============================================
-    // 🔥 CLIC EN EL MAPA
-    // ============================================
     map.on('click', function(e) {
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
@@ -503,31 +451,51 @@ document.addEventListener('DOMContentLoaded', function() {
             );
             
         } else {
-            if (confirm('¿Resetear puntos en el mapa?')) {
-                if (markerOrigen) map.removeLayer(markerOrigen);
-                if (markerDestino) map.removeLayer(markerDestino);
-                if (rutaLinea) map.removeLayer(rutaLinea);
-                markerOrigen = null;
-                markerDestino = null;
-                rutaLinea = null;
-                document.getElementById('origen').value = '';
-                document.getElementById('destino').value = '';
-                document.getElementById('distancia').value = '0';
-                document.getElementById('lat_origen').value = '';
-                document.getElementById('lng_origen').value = '';
-                document.getElementById('lat_destino').value = '';
-                document.getElementById('lng_destino').value = '';
-                document.getElementById('ciudad_origen').value = '';
-                document.getElementById('ciudad_destino').value = '';
-                calcularCotizacion();
-            }
+            Swal.fire({
+                title: '¿Resetear puntos?',
+                text: "Se borrarán el origen y el destino actuales en el mapa.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#0d6efd',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, resetear',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if (markerOrigen) map.removeLayer(markerOrigen);
+                    if (markerDestino) map.removeLayer(markerDestino);
+                    if (rutaLinea) map.removeLayer(rutaLinea);
+                    markerOrigen = null;
+                    markerDestino = null;
+                    rutaLinea = null;
+                    document.getElementById('origen').value = '';
+                    document.getElementById('destino').value = '';
+                    document.getElementById('distancia').value = '0';
+                    document.getElementById('lat_origen').value = '';
+                    document.getElementById('lng_origen').value = '';
+                    document.getElementById('lat_destino').value = '';
+                    document.getElementById('lng_destino').value = '';
+                    document.getElementById('ciudad_origen').value = '';
+                    document.getElementById('ciudad_destino').value = '';
+                    calcularCotizacion();
+                    
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
+                    Toast.fire({
+                        icon: 'success',
+                        title: 'Mapa reseteado'
+                    });
+                }
+            });
         }
     });
 });
-
-// ============================================
-// 🔥 BIENES Y COTIZACIÓN
-// ============================================
 
 let bienIndex = 1;
 
@@ -573,22 +541,19 @@ function eliminarBien(btn) {
         item.remove();
         calcularCotizacion();
     } else {
-        alert('Debe tener al menos un bien en la lista');
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: 'Debe tener al menos un bien en la lista.',
+            confirmButtonColor: '#0d6efd'
+        });
     }
 }
 
-// ============================================
-// 🔥 FUNCIÓN determinarZona - CORREGIDA
-// ============================================
 function determinarZona(origen, destino) {
-    // ✅ USAR LAS CIUDADES DETECTADAS POR LA API (MÁS CONFIABLE)
     const ciudadOrigen = document.getElementById('ciudad_origen')?.value || '';
     const ciudadDestino = document.getElementById('ciudad_destino')?.value || '';
     
-    console.log('📍 Ciudad Origen (API):', ciudadOrigen);
-    console.log('📍 Ciudad Destino (API):', ciudadDestino);
-    
-    // Normalizar textos
     const origenLimpio = ciudadOrigen.toLowerCase().trim();
     const destinoLimpio = ciudadDestino.toLowerCase().trim();
     
@@ -610,35 +575,21 @@ function determinarZona(origen, destino) {
     const esElAltoDestino = esElAlto(destinoLimpio);
     const esLaPazDestino = esLaPaz(destinoLimpio);
     
-    console.log('📍 El Alto Origen:', esElAltoOrigen);
-    console.log('📍 La Paz Origen:', esLaPazOrigen);
-    console.log('📍 El Alto Destino:', esElAltoDestino);
-    console.log('📍 La Paz Destino:', esLaPazDestino);
-    
-    // 🔥 PRIMERO: Combinaciones cruzadas (más específico)
     if (esElAltoOrigen && esLaPazDestino) {
-        console.log('✅ EL ALTO → LA PAZ');
         return 'el_alto_a_la_paz';
     }
     
     if (esLaPazOrigen && esElAltoDestino) {
-        console.log('✅ LA PAZ → EL ALTO');
         return 'la_paz_a_el_alto';
     }
     
-    // Ambos iguales
     if (esElAltoOrigen && esElAltoDestino) {
-        console.log('✅ EL ALTO → EL ALTO');
         return 'el_alto';
     }
     
     if (esLaPazOrigen && esLaPazDestino) {
-        console.log('✅ LA PAZ → LA PAZ');
         return 'la_paz';
     }
-    
-    // Si no se detecta nada, usar el texto original como fallback
-    console.log('⚠️ Usando texto original para detectar zona');
     
     const orig = origen.toLowerCase().trim();
     const dest = destino.toLowerCase().trim();
@@ -649,32 +600,24 @@ function determinarZona(origen, destino) {
     const destLaPaz = dest.includes('la paz') || dest.includes('paz');
     
     if (origElAlto && destLaPaz) {
-        console.log('✅ FALLBACK: EL ALTO → LA PAZ');
         return 'el_alto_a_la_paz';
     }
     
     if (origLaPaz && destElAlto) {
-        console.log('✅ FALLBACK: LA PAZ → EL ALTO');
         return 'la_paz_a_el_alto';
     }
     
     if (origElAlto && destElAlto) {
-        console.log('✅ FALLBACK: EL ALTO → EL ALTO');
         return 'el_alto';
     }
     
     if (origLaPaz && destLaPaz) {
-        console.log('✅ FALLBACK: LA PAZ → LA PAZ');
         return 'la_paz';
     }
     
-    console.log('⚠️ No se detectó zona, usando La Paz por defecto');
     return 'la_paz';
 }
 
-// ============================================
-// 🔥 CALCULAR COTIZACIÓN
-// ============================================
 function calcularCotizacion() {
     const origen = document.getElementById('origen').value || '';
     const destino = document.getElementById('destino').value || '';
@@ -684,8 +627,6 @@ function calcularCotizacion() {
     const distancia = parseFloat(document.getElementById('distancia').value) || 0;
 
     const zona = determinarZona(origen, destino);
-    
-    console.log('🏷️ Zona final:', zona);
     
     const tarifas = {
         'la_paz': CONFIG_PRECIOS.precio_la_paz,
@@ -761,7 +702,6 @@ function calcularCotizacion() {
     preview.innerHTML = html;
 }
 
-// Event listeners - SOLO SI EL USUARIO ES ADMIN
 @if(auth()->user()->isAdmin())
 document.getElementById('origen').addEventListener('input', calcularCotizacion);
 document.getElementById('destino').addEventListener('input', calcularCotizacion);

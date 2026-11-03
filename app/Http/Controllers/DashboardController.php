@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Servicio;
 use App\Models\Cliente;
 use App\Models\Chofer;
+use App\Models\Ayudante;
 use App\Models\Deuda;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -20,174 +21,197 @@ class DashboardController extends BaseController
 
     public function index()
     {
-        // ============================================
-        // FECHAS DE REFERENCIA
-        // ============================================
-        $ahora = Carbon::now();
-        $inicioMes = $ahora->copy()->startOfMonth();
-        $finMes = $ahora->copy()->endOfMonth();
-        $hoy = $ahora->copy()->format('Y-m-d');
+        $user = auth()->user();
+        $rol  = $user->role;
 
-        // ============================================
-        // TARJETAS PRINCIPALES
-        // ============================================
-        $totalServicios = Servicio::count();
-        
-        $totalIngresos = Servicio::where('estado_pago', 'pagado')
-            ->sum('costo_total');
-        
-        $clientesActivos = Cliente::where('bloqueado', false)->count();
-        
-        $pendientesPago = Servicio::where('estado_pago', 'pendiente')
-            ->whereIn('estado', ['finalizado', 'en_progreso'])
+        $esAdmin         = $user->isAdmin();
+        $esRecepcionista = $user->isRecepcionista();
+        $esChofer        = $user->isChofer();
+        $esAyudante      = $user->isAyudante();
+
+        $ahora     = Carbon::now();
+        $inicioMes = $ahora->copy()->startOfMonth();
+        $finMes    = $ahora->copy()->endOfMonth();
+        $hoy       = $ahora->copy()->format('Y-m-d');
+
+        $queryBase = Servicio::query();
+
+        if ($esChofer && $user->chofer) {
+            $queryBase->where('chofer_id', $user->chofer->id);
+        }
+
+        if ($esAyudante && $user->ayudante) {
+            $queryBase->whereHas('ayudantes', function ($q) use ($user) {
+                $q->where('ayudante_id', $user->ayudante->id);
+            });
+        }
+
+
+        $serviciosPorEstado = [
+            'pendiente'   => (clone $queryBase)->where('estado', 'pendiente')->count(),
+            'confirmado'  => (clone $queryBase)->where('estado', 'confirmado')->count(),
+            'en_progreso' => (clone $queryBase)->where('estado', 'en_progreso')->count(),
+            'finalizado'  => (clone $queryBase)->where('estado', 'finalizado')->count(),
+            'cancelado'   => (clone $queryBase)->where('estado', 'cancelado')->count(),
+        ];
+
+        $totalServicios = array_sum($serviciosPorEstado);
+
+        $serviciosEnProgreso = $serviciosPorEstado['en_progreso'];
+        $serviciosEnCamino   = (clone $queryBase)
+            ->whereDate('fecha_servicio', $hoy)
+            ->where('estado', 'confirmado')
             ->count();
 
-        // ============================================
-        // TARJETAS SECUNDARIAS
-        // ============================================
-        // Servicios EN PROGRESO ahora mismo
-        $serviciosEnProgreso = Servicio::where('estado', 'en_progreso')->count();
-        
-        // Servicios FINALIZADOS hoy
-        $serviciosFinalizadosHoy = Servicio::where('estado', 'finalizado')
+        $serviciosFinalizadosHoy = (clone $queryBase)
+            ->where('estado', 'finalizado')
             ->whereDate('fecha_servicio', $hoy)
             ->count();
-        
-        // Servicios PAGADOS este mes
-        $serviciosPagadosMes = Servicio::where('estado_pago', 'pagado')
-            ->whereBetween('updated_at', [$inicioMes, $finMes])
-            ->count();
-        
-        // Ingresos del mes
-        $ingresosMes = Servicio::where('estado_pago', 'pagado')
-            ->whereBetween('updated_at', [$inicioMes, $finMes])
-            ->sum('costo_total');
 
-        // Servicios que empiezan HOY y aún no están en progreso
-        $serviciosEnCamino = Servicio::whereDate('fecha_servicio', $hoy)
-            ->whereIn('estado', ['confirmado'])
+        
+        $serviciosMes = (clone $queryBase)
+            ->whereMonth('fecha_servicio', $ahora->month)
+            ->whereYear('fecha_servicio', $ahora->year)
             ->count();
 
-        // ============================================
-        // GRÁFICA 1: SERVICIOS POR ESTADO OPERATIVO
-        // ============================================
-        $serviciosPorEstado = [
-            'pendiente' => Servicio::where('estado', 'pendiente')->count(),
-            'confirmado' => Servicio::where('estado', 'confirmado')->count(),
-            'en_progreso' => Servicio::where('estado', 'en_progreso')->count(),
-            'finalizado' => Servicio::where('estado', 'finalizado')->count(),
-            'cancelado' => Servicio::where('estado', 'cancelado')->count(),
-        ];
+        $totalServiciosGlobal = 0;
+        $totalIngresos = 0;
+        $clientesActivos = 0;
+        $pendientesPago = 0;
+        $ingresosMes = 0;
+        $montoDeudas = 0;
+        $deudasPendientes = 0;
+        $serviciosPagadosMes = 0;
+        $ingresosPorMes = collect();
+        $topClientes = collect();
+        $rankingChoferes = collect();
 
-        // ============================================
-        // GRÁFICA 2: SERVICIOS POR ESTADO DE PAGO
-        // ============================================
-        $serviciosPorPago = [
-            'pendiente' => Servicio::where('estado_pago', 'pendiente')
-                ->whereIn('estado', ['finalizado', 'en_progreso', 'confirmado'])
-                ->count(),
-            'pagado' => Servicio::where('estado_pago', 'pagado')->count(),
-        ];
+        if ($esAdmin) {
+            $totalServiciosGlobal = Servicio::count();
+            $totalIngresos = Servicio::where('estado_pago', 'pagado')->sum('costo_total');
+            $clientesActivos = Cliente::where('bloqueado', false)->count();
+            $pendientesPago = Servicio::where('estado_pago', 'pendiente')
+                ->whereIn('estado', ['finalizado', 'en_progreso'])
+                ->count();
 
-        // ============================================
-        // GRÁFICA 3: INGRESOS POR MES (últimos 6 meses)
-        // ============================================
-        $ingresosPorMes = Servicio::where('estado_pago', 'pagado')
-            ->where('updated_at', '>=', $ahora->copy()->subMonths(6))
-            ->select(
-                DB::raw("TO_CHAR(updated_at, 'YYYY-MM') as mes"),
-                DB::raw('SUM(costo_total) as total'),
-                DB::raw('COUNT(*) as cantidad')
-            )
-            ->groupBy('mes')
-            ->orderBy('mes')
-            ->get();
+            $deudasPendientes = Deuda::where('estado', 'pendiente')->count();
+            $montoDeudas = Deuda::where('estado', 'pendiente')->sum('monto');
 
-        // ============================================
-        // TABLA 1: SERVICIOS EN CURSO (EN PROGRESO)
-        // ============================================
-        $serviciosEnCurso = Servicio::with(['cliente', 'chofer', 'vehiculo'])
+            $serviciosPagadosMes = Servicio::where('estado_pago', 'pagado')
+                ->whereBetween('updated_at', [$inicioMes, $finMes])
+                ->count();
+
+            $ingresosMes = Servicio::where('estado_pago', 'pagado')
+                ->whereBetween('updated_at', [$inicioMes, $finMes])
+                ->sum('costo_total');
+
+
+            $ingresosPorMes = Servicio::where('estado_pago', 'pagado')
+                ->where('updated_at', '>=', $ahora->copy()->subMonths(6))
+                ->select(
+                    DB::raw("TO_CHAR(updated_at, 'YYYY-MM') as mes"),
+                    DB::raw('SUM(costo_total) as total'),
+                    DB::raw('COUNT(*) as cantidad')
+                )
+                ->groupBy('mes')
+                ->orderBy('mes')
+                ->get();
+
+            $topClientes = Cliente::withCount('servicios')
+                ->orderBy('servicios_count', 'desc')
+                ->limit(5)
+                ->get();
+
+            $rankingChoferes = Chofer::withCount(['servicios' => function ($q) {
+                    $q->where('estado', 'finalizado');
+                }])
+                ->orderBy('servicios_count', 'desc')
+                ->limit(5)
+                ->get();
+        }
+
+        $clientesRegistrados = 0;
+        if ($esRecepcionista) {
+            $totalServiciosGlobal = Servicio::count();
+            $clientesRegistrados = Cliente::count();
+        }
+
+        $serviciosEnCurso = (clone $queryBase)
+            ->with(['cliente', 'chofer', 'vehiculo'])
             ->where('estado', 'en_progreso')
-            ->orderBy('fecha_servicio', 'desc')
+            ->orderByDesc('fecha_servicio')
             ->limit(5)
             ->get();
 
-        // ============================================
-        // TABLA 2: PRÓXIMOS SERVICIOS (hoy y mañana)
-        // ============================================
-        $proximosServicios = Servicio::with(['cliente', 'chofer', 'vehiculo'])
+        
+        $proximosServicios = (clone $queryBase)
+            ->with(['cliente', 'chofer', 'vehiculo'])
             ->whereIn('estado', ['pendiente', 'confirmado'])
             ->whereDate('fecha_servicio', '>=', $hoy)
             ->whereDate('fecha_servicio', '<=', $ahora->copy()->addDay()->format('Y-m-d'))
-            ->orderBy('fecha_servicio', 'asc')
-            ->orderBy('hora_inicio', 'asc')
+            ->orderBy('fecha_servicio')
+            ->orderBy('hora_inicio')
             ->limit(5)
             ->get();
 
-        // ============================================
-        // TABLA 3: TOP 5 CLIENTES (más servicios)
-        // ============================================
-        $topClientes = Cliente::withCount('servicios')
-            ->orderBy('servicios_count', 'desc')
-            ->limit(5)
-            ->get();
+        
+        $serviciosRecientes = collect();
+        if ($esAdmin || $esRecepcionista) {
+            $serviciosRecientes = Servicio::with(['cliente', 'chofer'])
+                ->orderByDesc('id')
+                ->limit(5)
+                ->get();
+        }
 
-        // ============================================
-        // TABLA 4: RANKING DE CHOFERES
-        // ============================================
-        $rankingChoferes = Chofer::withCount(['servicios' => function($q) {
-                $q->where('estado', 'finalizado');
-            }])
-            ->orderBy('servicios_count', 'desc')
-            ->limit(5)
-            ->get();
+        
+        $serviciosPorPago = [
+            'pendiente' => 0,
+            'pagado'    => 0,
+        ];
+        if ($esAdmin) {
+            $serviciosPorPago = [
+                'pendiente' => Servicio::where('estado_pago', 'pendiente')
+                    ->whereIn('estado', ['finalizado', 'en_progreso', 'confirmado'])
+                    ->count(),
+                'pagado'    => Servicio::where('estado_pago', 'pagado')->count(),
+            ];
+        }
 
-        // ============================================
-        // SERVICIOS RECIENTES (los últimos creados)
-        // ============================================
-        $serviciosRecientes = Servicio::with(['cliente', 'chofer'])
-            ->orderBy('id', 'desc')
-            ->limit(5)
-            ->get();
-
-        // ============================================
-        // DEUDAS PENDIENTES
-        // ============================================
-        $deudasPendientes = Deuda::where('estado', 'pendiente')->count();
-        $montoDeudas = Deuda::where('estado', 'pendiente')->sum('monto');
-
-        // ============================================
-        // RETORNAR VISTA
-        // ============================================
         return view('dashboard.index', compact(
-            // Tarjetas principales
+            
+            'serviciosPorEstado',
             'totalServicios',
+            'serviciosEnProgreso',
+            'serviciosEnCamino',
+            'serviciosFinalizadosHoy',
+            'serviciosMes',
+            'serviciosEnCurso',
+            'proximosServicios',
+            'totalServiciosGlobal',
+
+            
             'totalIngresos',
             'clientesActivos',
             'pendientesPago',
-            
-            // Tarjetas secundarias
-            'serviciosEnProgreso',
-            'serviciosFinalizadosHoy',
-            'serviciosPagadosMes',
             'ingresosMes',
-            'serviciosEnCamino',
-            
-            // Gráficas
-            'serviciosPorEstado',
-            'serviciosPorPago',
+            'serviciosPagadosMes',
+            'deudasPendientes',
+            'montoDeudas',
             'ingresosPorMes',
-            
-            // Tablas
-            'serviciosEnCurso',
-            'proximosServicios',
             'topClientes',
             'rankingChoferes',
+            'serviciosPorPago',
             'serviciosRecientes',
+
             
-            // Deudas
-            'deudasPendientes',
-            'montoDeudas'
+            'clientesRegistrados',
+
+            
+            'rol',
+            'esAdmin',
+            'esRecepcionista',
+            'esChofer',
+            'esAyudante'
         ));
     }
 }

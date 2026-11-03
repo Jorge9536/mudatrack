@@ -22,7 +22,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->faker = FakerFactory::create('es_ES');
 
-        // 1. CREAR USUARIO ADMIN
         User::create([
             'name' => 'Admin MudaTrack',
             'email' => 'admin@mudatrack.com',
@@ -30,19 +29,14 @@ class DatabaseSeeder extends Seeder
             'role' => 'admin'
         ]);
 
-        // 2. CREAR CHOFERES (5)
         $choferes = Chofer::factory()->count(5)->create();
 
-        // 3. CREAR AYUDANTES (8)
         $ayudantes = Ayudante::factory()->count(8)->create();
 
-        // 4. CREAR VEHÍCULOS (6)
         $vehiculos = Vehiculo::factory()->count(6)->create();
 
-        // 5. CREAR CLIENTES (25)
         $clientes = Cliente::factory()->count(25)->create();
 
-        // 6. CREAR SERVICIOS (24)
         $estados = ['pendiente', 'confirmado', 'en_progreso', 'finalizado', 'cancelado', 'pendiente_pago', 'pagado'];
         
         for ($i = 0; $i < 24; $i++) {
@@ -50,14 +44,11 @@ class DatabaseSeeder extends Seeder
             $chofer = $choferes->random();
             $vehiculo = $vehiculos->random();
             
-            // Calcular costo
             $costoBase = $this->faker->randomElement([200, 250, 300, 350, 400, 450, 500, 600]);
             $ayudantesCosto = $this->faker->numberBetween(0, 3) * 80;
             $pisosCosto = max(0, $this->faker->numberBetween(1, 4) - 1) * 20;
             $callejonCosto = $this->faker->boolean(20) ? 30 : 0;
             $costoTotal = $costoBase + $ayudantesCosto + $pisosCosto + $callejonCosto;
-
-            // Seleccionar estado con distribución realista
             $estado = $this->faker->randomElement($estados);
 
             $servicio = Servicio::create([
@@ -94,7 +85,6 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
-            // Crear bienes para el servicio (2-5 bienes)
             $numBienes = $this->faker->numberBetween(2, 5);
             for ($j = 0; $j < $numBienes; $j++) {
                 Bien::create([
@@ -111,7 +101,6 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
 
-            // Si el servicio está en pendiente_pago, crear deuda
             if ($estado === 'pendiente_pago') {
                 Deuda::create([
                     'cliente_id' => $cliente->id,
@@ -125,8 +114,6 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
         }
-
-        // 7. ALGUNOS CLIENTES MOROSOS (3-4)
         $clientesMorosos = $clientes->random(4);
         foreach ($clientesMorosos as $cliente) {
             for ($i = 0; $i < 2; $i++) {

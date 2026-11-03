@@ -26,42 +26,38 @@ class GpsController extends BaseController
         $this->firebaseUrl = "https://firestore.googleapis.com/v1/projects/gps1-e12e5/databases/(default)/documents";
     }
 
-    /**
-     * Lista de servicios con seguimiento GPS
-     */
     public function index(Request $request)
-    {
-        $query = Servicio::with(['cliente', 'chofer', 'vehiculo'])
-            ->whereIn('estado', ['confirmado', 'en_progreso', 'pendiente']);
+{
+    $query = Servicio::with(['cliente', 'chofer', 'vehiculo'])
+        ->whereIn('estado', ['confirmado', 'en_progreso', 'pendiente']);
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->whereHas('cliente', function($q2) use ($search) {
-                    $q2->where('nombre_completo', 'LIKE', "%{$search}%");
-                })->orWhere('origen', 'LIKE', "%{$search}%")
-                  ->orWhere('destino', 'LIKE', "%{$search}%");
-            });
-        }
-
-        if ($request->filled('estado')) {
-            $query->where('estado', $request->estado);
-        }
-
-        if ($request->filled('fecha')) {
-            $query->whereDate('fecha_servicio', $request->fecha);
-        }
-
-        $servicios = $query->orderBy('created_at', 'desc')->paginate(15);
-        
-        $dispositivosFirebase = $this->getTodasUbicaciones();
-
-        return view('gps.index', compact('servicios', 'dispositivosFirebase'));
+    if ($request->filled('search')) {
+        $search = trim($request->search);
+        $query->where(function ($q) use ($search) {
+            $q->whereHas('cliente', function ($q2) use ($search) {
+                $q2->where('nombre_completo', 'LIKE', "%{$search}%")
+                   ->orWhere('telefono', 'LIKE', "%{$search}%");
+            })
+            ->orWhere('origen', 'LIKE', "%{$search}%")
+            ->orWhere('destino', 'LIKE', "%{$search}%");
+        });
     }
 
-    /**
-     * Seguimiento GPS (privado, con login)
-     */
+    if ($request->filled('estado')) {
+        $query->where('estado', $request->estado);
+    }
+
+    if ($request->filled('fecha')) {
+        $query->whereDate('fecha_servicio', $request->fecha);
+    }
+
+    $servicios = $query->orderBy('created_at', 'desc')->paginate(15);
+
+    $dispositivosFirebase = $this->getTodasUbicaciones();
+
+    return view('gps.index', compact('servicios', 'dispositivosFirebase'));
+}
+
     public function seguimiento($id)
     {
         $servicio = Servicio::with(['cliente', 'chofer', 'vehiculo'])->findOrFail($id);
@@ -106,9 +102,6 @@ class GpsController extends BaseController
         ));
     }
 
-    /**
-     * 🔥 VISTA PÚBLICA DE SEGUIMIENTO (sin login)
-     */
     public function seguimientoPublico($token)
     {
         $servicio = Servicio::where('token_seguimiento', $token)
@@ -149,9 +142,6 @@ class GpsController extends BaseController
         ));
     }
 
-    /**
-     * 🔥 API PÚBLICA: Obtener ubicación por token (para AJAX)
-     */
     public function ubicacionPublica($token)
     {
         $servicio = Servicio::where('token_seguimiento', $token)->first();
@@ -184,9 +174,6 @@ class GpsController extends BaseController
         ]);
     }
 
-    /**
-     * Actualiza la ubicación GPS
-     */
     public function actualizar(Request $request)
     {
         $validated = $request->validate([
@@ -211,9 +198,6 @@ class GpsController extends BaseController
         ]);
     }
 
-    /**
-     * Última ubicación de un servicio
-     */
     public function ultimaUbicacion($id)
     {
         $servicio = Servicio::findOrFail($id);
@@ -242,9 +226,6 @@ class GpsController extends BaseController
         ]);
     }
 
-    /**
-     * Historial de ubicaciones
-     */
     public function historial($id)
     {
         $servicio = Servicio::findOrFail($id);
@@ -263,13 +244,6 @@ class GpsController extends BaseController
         return Dispositivo::with(['chofer', 'vehiculo'])->where('activo', true)->get();
     }
 
-    // ============================================
-    // MÉTODOS PARA FIREBASE
-    // ============================================
-
-    /**
-     * Obtener ubicación de UN dispositivo específico
-     */
     private function getUbicacionPorDispositivoId($dispositivoId)
     {
         try {
@@ -310,9 +284,6 @@ class GpsController extends BaseController
         }
     }
 
-    /**
-     * API: Obtener ubicación de UN dispositivo específico
-     */
     public function getUbicacionDispositivoApi($dispositivoId)
     {
         try {
@@ -338,9 +309,6 @@ class GpsController extends BaseController
         }
     }
 
-    /**
-     * Obtener TODAS las ubicaciones (admin)
-     */
     public function getTodasUbicaciones()
     {
         try {
@@ -380,9 +348,6 @@ class GpsController extends BaseController
         }
     }
 
-    /**
-     * API: Todas las ubicaciones (admin)
-     */
     public function getFirebaseUbicaciones()
     {
         $ubicaciones = $this->getTodasUbicaciones();
@@ -392,9 +357,6 @@ class GpsController extends BaseController
         ]);
     }
 
-    /**
-     * Vista del administrador
-     */
     public function adminMapa()
     {
         if (!auth()->user()->isAdmin()) {
@@ -415,9 +377,6 @@ class GpsController extends BaseController
         return view('gps.admin-mapa', compact('vehiculos', 'ubicacionesFirebase', 'serviciosActivos'));
     }
 
-    /**
-     * API con nombres de choferes (admin)
-     */
     public function getUbicacionesVehiculos()
     {
         try {
@@ -465,9 +424,6 @@ class GpsController extends BaseController
         }
     }
 
-    /**
-     * Función auxiliar para Firestore
-     */
     private function getFieldValue($fields, $fieldName, $type)
     {
         if (!isset($fields[$fieldName])) {

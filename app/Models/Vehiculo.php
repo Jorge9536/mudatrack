@@ -32,42 +32,32 @@ class Vehiculo extends Model
         'chata' => 'Chata'
     ];
 
-    // Relación con servicios
     public function servicios()
     {
         return $this->hasMany(Servicio::class);
     }
 
-    /**
-     * 🚀 VERIFICAR DISPONIBILIDAD DEL VEHÍCULO (SIN excepción)
-     */
+
     public function isAvailable($fecha, $horaInicio, $horaFin)
     {
         return !Servicio::verificarDisponibilidad($fecha, $horaInicio, $horaFin, $this->id, 'vehiculo');
     }
 
-    /**
-     * 🔥 VERIFICAR DISPONIBILIDAD DEL VEHÍCULO (CON excepción)
-     * Útil para modificaciones donde el servicio actual debe excluirse
-     */
     public function isAvailableForEdit($fecha, $horaInicio, $horaFin, $servicioId = null)
     {
         return !Servicio::verificarDisponibilidadConExcepcion($fecha, $horaInicio, $horaFin, $this->id, 'vehiculo', $servicioId);
     }
 
-    // Scope para vehículos disponibles
     public function scopeDisponible($query)
     {
         return $query->where('disponible', true);
     }
 
-    // Accessor para tipo
     public function getTipoLabelAttribute()
     {
         return self::TIPOS[$this->tipo] ?? $this->tipo;
     }
 
-    // Relación con chofer a través de servicio activo
     public function getChoferActualAttribute()
     {
         $servicioActivo = $this->servicios()
@@ -78,7 +68,6 @@ class Vehiculo extends Model
         return $servicioActivo ? $servicioActivo->chofer : null;
     }
 
-    // Obtener servicio activo
     public function getServicioActivoAttribute()
     {
         return $this->servicios()

@@ -10,10 +10,6 @@ use Illuminate\Validation\ValidationException;
 
 class AuthApiController extends Controller
 {
-    /**
-     * Login del APK.
-     * POST /api/login
-     */
     public function login(Request $request)
     {
         $request->validate([
@@ -44,7 +40,6 @@ class AuthApiController extends Controller
             ], 403);
         }
 
-        // Revocar tokens anteriores del mismo dispositivo
         $user->tokens()->where('name', $request->device_name)->delete();
 
         $token = $user->createToken($request->device_name)->plainTextToken;
@@ -66,10 +61,6 @@ class AuthApiController extends Controller
         ]);
     }
 
-    /**
-     * Logout.
-     * POST /api/logout
-     */
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();

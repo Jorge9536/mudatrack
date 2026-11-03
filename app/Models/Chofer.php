@@ -23,10 +23,6 @@ class Chofer extends Model
     protected $casts = [
         'disponible' => 'boolean'
     ];
-
-    // ============================================
-    // RELACIONES
-    // ============================================
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -42,9 +38,6 @@ class Chofer extends Model
         return $this->hasMany(Dispositivo::class);
     }
 
-    // ============================================
-    // MÉTODOS DE DISPONIBILIDAD
-    // ============================================
     public function isAvailable($fecha, $horaInicio, $horaFin)
     {
         return !Servicio::verificarDisponibilidad($fecha, $horaInicio, $horaFin, $this->id, 'chofer');
@@ -55,17 +48,11 @@ class Chofer extends Model
         return !Servicio::verificarDisponibilidadConExcepcion($fecha, $horaInicio, $horaFin, $this->id, 'chofer', $servicioId);
     }
 
-    // ============================================
-    // ACCESSORS
-    // ============================================
     public function getNombreCompletoAttribute($value)
     {
         return ucwords(strtolower($value));
     }
 
-    // ============================================
-    // SCOPES
-    // ============================================
     public function scopeDisponible($query)
     {
         return $query->where('disponible', true);

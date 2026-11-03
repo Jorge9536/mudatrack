@@ -232,7 +232,7 @@ class MiPrimeraPruebaTest extends TestCase
         $this->assertFalse($ayudante->disponible);
     }
 
-    /** ========== PRUEBAS DE SERVICIOS (CORREGIDAS CON ESTADOS VÁLIDOS) ========== */
+    /** ========== PRUEBAS DE SERVICIOS (CORREGIDAS) ========== */
     
     public function test_servicio_se_puede_crear_correctamente()
     {
@@ -246,13 +246,15 @@ class MiPrimeraPruebaTest extends TestCase
             'chofer_id' => $chofer->id,
             'origen' => 'Av. 6 de Agosto, La Paz',
             'destino' => 'Calle 15, El Alto',
-            'fecha_servicio' => now()->addDays(2),
+            'fecha_servicio' => now()->addDays(2)->format('Y-m-d'),
+            'hora_inicio' => '09:00:00',
+            'hora_fin' => '12:00:00',
             'cantidad_ayudantes' => 2,
             'numero_pisos' => 3,
             'es_callejon' => false,
             'costo_total' => 500.00,
-            'estado' => 'pendiente', // Estado válido
-            'metodo_pago' => 'efectivo' // Método de pago válido
+            'estado' => 'pendiente',
+            'metodo_pago' => 'efectivo'
         ]);
 
         $this->assertEquals('pendiente', $servicio->estado);
@@ -273,16 +275,17 @@ class MiPrimeraPruebaTest extends TestCase
             'chofer_id' => $chofer->id,
             'origen' => 'Origen',
             'destino' => 'Destino',
-            'fecha_servicio' => now(),
+            'fecha_servicio' => now()->format('Y-m-d'),
+            'hora_inicio' => '09:00:00',
+            'hora_fin' => '12:00:00',
             'cantidad_ayudantes' => 1,
             'numero_pisos' => 1,
             'es_callejon' => false,
             'costo_total' => 500.00,
-            'estado' => 'pendiente', // Estado válido
-            'metodo_pago' => 'efectivo' // Método de pago válido
+            'estado' => 'pendiente',
+            'metodo_pago' => 'efectivo'
         ]);
 
-        // Cambiar a otro estado válido (según tu CHECK constraint)
         $servicio->estado = 'confirmado';
         $servicio->save();
 
@@ -301,16 +304,17 @@ class MiPrimeraPruebaTest extends TestCase
             'chofer_id' => $chofer->id,
             'origen' => 'Origen',
             'destino' => 'Destino',
-            'fecha_servicio' => now(),
+            'fecha_servicio' => now()->format('Y-m-d'),
+            'hora_inicio' => '09:00:00',
+            'hora_fin' => '12:00:00',
             'cantidad_ayudantes' => 1,
             'numero_pisos' => 1,
             'es_callejon' => false,
             'costo_total' => 500.00,
             'estado' => 'pendiente',
-            'metodo_pago' => 'efectivo' // Método válido
+            'metodo_pago' => 'efectivo'
         ]);
 
-        // Cambiar a otro método válido
         $servicio->metodo_pago = 'qr';
         $servicio->save();
 

@@ -70,13 +70,10 @@
                     </tbody>
                 </table>
             </div>
-            
-            <!-- Paginación reducida -->
             <div class="d-flex justify-content-center mt-3">
                 @if($clientes->hasPages())
                     <nav>
                         <ul class="pagination pagination-sm mb-0">
-                            {{-- Botón Anterior --}}
                             @if($clientes->onFirstPage())
                                 <li class="page-item disabled">
                                     <span class="page-link">
@@ -91,14 +88,12 @@
                                 </li>
                             @endif
 
-                            {{-- Información de página --}}
                             <li class="page-item active">
                                 <span class="page-link">
                                     Página {{ $clientes->currentPage() }} de {{ $clientes->lastPage() }}
                                 </span>
                             </li>
 
-                            {{-- Botón Siguiente --}}
                             @if($clientes->hasMorePages())
                                 <li class="page-item">
                                     <a class="page-link" href="{{ $clientes->nextPageUrl() }}" rel="next">

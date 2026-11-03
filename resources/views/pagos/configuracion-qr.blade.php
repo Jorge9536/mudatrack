@@ -35,17 +35,6 @@
         font-size: 3.5rem;
         margin-bottom: 0.5rem;
     }
-    
-    .debug-box {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        padding: 10px;
-        font-size: 12px;
-        font-family: monospace;
-        margin-top: 10px;
-        text-align: left;
-    }
 </style>
 @endpush
 
@@ -79,7 +68,6 @@
                             $tieneImagen = false;
                             $imagenUrl = null;
                             $urlQr = null;
-                            $rutaFisica = null;
                             
                             if ($qr && $qr->imagen_qr) {
                                 $rutaFisica = storage_path('app/public/' . $qr->imagen_qr);
@@ -134,17 +122,6 @@
                                 <span class="badge bg-warning text-dark">
                                     <i class="fas fa-exclamation-triangle me-1"></i> Pendiente
                                 </span>
-                            @endif
-                        </div>
-
-                        <!-- Debug -->
-                        <div class="debug-box">
-                            <strong>🔍 Información técnica:</strong><br>
-                            imagen_qr en BD: {{ $qr->imagen_qr ?? 'NULL' }}<br>
-                            url_qr en BD: {{ $qr->url_qr ?? 'NULL' }}<br>
-                            @if($qr && $qr->imagen_qr)
-                                Ruta física: {{ $rutaFisica ?? 'No definida' }}<br>
-                                ¿Existe archivo? {{ file_exists($rutaFisica) ? '✅ Sí' : '❌ No' }}
                             @endif
                         </div>
                     </div>

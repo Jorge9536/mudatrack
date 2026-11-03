@@ -47,7 +47,6 @@
                             </div>
                         </div>
                     @else
-                        <!-- 2FA Desactivado -->
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
                             Activa la autenticación de dos factores para mayor seguridad.

@@ -40,10 +40,6 @@ class Servicio extends Model
         'es_callejon' => 'boolean',
         'costo_total' => 'decimal:2'
     ];
-
-    // ============================================
-    // ESTADOS OPERATIVOS (ya sin 'pagado' ni 'pendiente_pago')
-    // ============================================
     public const ESTADOS = [
         'pendiente',
         'confirmado',
@@ -59,10 +55,6 @@ class Servicio extends Model
         'finalizado' => 'Finalizado',
         'cancelado' => 'Cancelado'
     ];
-
-    // ============================================
-    // ESTADOS DE PAGO
-    // ============================================
     public const ESTADOS_PAGO = [
         'pendiente',
         'pagado'
@@ -79,9 +71,6 @@ class Servicio extends Model
         'transferencia' => 'Transferencia'
     ];
 
-    // ============================================
-    // GENERAR TOKEN AUTOMÁTICAMENTE AL CREAR
-    // ============================================
     protected static function boot()
     {
         parent::boot();
@@ -90,16 +79,12 @@ class Servicio extends Model
             if (empty($servicio->token_seguimiento)) {
                 $servicio->token_seguimiento = Str::random(48);
             }
-            // Inicializar estado_pago si no viene
             if (empty($servicio->estado_pago)) {
                 $servicio->estado_pago = 'pendiente';
             }
         });
     }
 
-    // ============================================
-    // RELACIONES
-    // ============================================
     public function cliente()
     {
         return $this->belongsTo(Cliente::class);
@@ -136,9 +121,6 @@ class Servicio extends Model
                     ->withTimestamps();
     }
 
-    // ============================================
-    // MÉTODOS PARA EL CALENDARIO
-    // ============================================
     public function getFechaHoraInicioAttribute()
     {
         if ($this->fecha_servicio && $this->hora_inicio) {
@@ -252,9 +234,6 @@ class Servicio extends Model
         return $query->exists();
     }
 
-    // ============================================
-    // MÉTODOS DE LÓGICA
-    // ============================================
     public function estaPagado(): bool
     {
         return $this->estado_pago === 'pagado';
@@ -287,10 +266,6 @@ class Servicio extends Model
     {
         return self::METODOS_PAGO[$this->metodo_pago] ?? $this->metodo_pago;
     }
-
-    // ============================================
-    // SCOPES
-    // ============================================
     public function scopePendientes($query)
     {
         return $query->where('estado', 'pendiente');

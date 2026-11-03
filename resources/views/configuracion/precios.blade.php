@@ -29,7 +29,6 @@
                         @csrf
                         @method('PUT')
 
-                        <!-- Precios por Zona -->
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label class="form-label">La Paz → La Paz</label>
@@ -59,7 +58,6 @@
 
                         <hr>
 
-                        <!-- Costos Adicionales -->
                         <h6 class="mb-3"><i class="fas fa-plus-circle me-2 text-primary"></i>Costos Adicionales</h6>
                         <div class="row">
                             <div class="col-md-3">

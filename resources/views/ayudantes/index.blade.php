@@ -2,6 +2,55 @@
 
 @section('title', 'Ayudantes')
 
+@push('styles')
+<style>
+    .pagination { margin-bottom: 0; }
+    .pagination .page-link { padding: 0.25rem 0.6rem; font-size: 0.85rem; }
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    .toast-custom {
+        min-width: 300px;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #fff;
+        font-family: 'Segoe UI', sans-serif;
+        animation: slideInToast 0.3s ease;
+        margin-bottom: 10px;
+    }
+    .toast-custom.toast-success { background: linear-gradient(135deg, #198754, #20c997); }
+    .toast-custom.toast-error   { background: linear-gradient(135deg, #dc3545, #f87171); }
+    .toast-custom.toast-info    { background: linear-gradient(135deg, #0dcaf0, #3b82f6); }
+    .toast-custom i { font-size: 1.5rem; }
+    .toast-custom .toast-text { flex: 1; font-size: 0.9rem; }
+    .toast-custom .toast-close {
+        background: none; border: none; color: #fff;
+        font-size: 1.2rem; cursor: pointer; opacity: 0.8;
+    }
+    .toast-custom .toast-close:hover { opacity: 1; }
+
+    @keyframes slideInToast {
+        from { transform: translateX(120%); opacity: 0; }
+        to   { transform: translateX(0);    opacity: 1; }
+    }
+    @keyframes slideOutToast {
+        from { transform: translateX(0);    opacity: 1; }
+        to   { transform: translateX(120%); opacity: 0; }
+    }
+    .modal-icon-large {
+        font-size: 4rem;
+        margin-bottom: 10px;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -15,8 +64,6 @@
         </a>
         @endif
     </div>
-
-    <!-- Tarjetas de estadísticas -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
             <div class="card bg-light">
@@ -54,7 +101,6 @@
         </div>
     </div>
 
-    <!-- Tabla -->
     <div class="card shadow-sm">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
             <h6 class="mb-0"><i class="fas fa-list me-2 text-primary"></i>Lista de Ayudantes</h6>
@@ -89,27 +135,37 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('ayudantes.show', $ayudante) }}" class="btn btn-sm btn-info">
+                                <a href="{{ route('ayudantes.show', $ayudante) }}" class="btn btn-sm btn-info" title="Ver">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 @if(auth()->user()->isAdmin())
-                                <a href="{{ route('ayudantes.edit', $ayudante) }}" class="btn btn-sm btn-warning">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('ayudantes.toggle-disponibilidad', $ayudante) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm {{ $ayudante->disponible ? 'btn-danger' : 'btn-success' }}">
+                                    <a href="{{ route('ayudantes.edit', $ayudante) }}" class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+
+                                    <button class="btn btn-sm {{ $ayudante->disponible ? 'btn-danger' : 'btn-success' }}"
+                                            title="{{ $ayudante->disponible ? 'Marcar como ocupado' : 'Marcar como disponible' }}"
+                                            onclick="abrirModalDisponibilidad({{ $ayudante->id }}, '{{ $ayudante->nombre_completo }}', {{ $ayudante->disponible ? 'true' : 'false' }})">
                                         <i class="fas {{ $ayudante->disponible ? 'fa-pause' : 'fa-play' }}"></i>
                                     </button>
-                                </form>
-                                <form action="{{ route('ayudantes.destroy', $ayudante) }}" method="POST" class="d-inline" 
-                                      onsubmit="return confirm('¿Eliminar ayudante {{ $ayudante->nombre_completo }}?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">
+
+                                    <button class="btn btn-sm btn-danger" title="Eliminar"
+                                            onclick="abrirModalEliminar({{ $ayudante->id }}, '{{ $ayudante->nombre_completo }}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
-                                </form>
+
+                                    <form id="form-disponibilidad-{{ $ayudante->id }}"
+                                          action="{{ route('ayudantes.toggle-disponibilidad', $ayudante) }}"
+                                          method="POST" class="d-none">
+                                        @csrf
+                                    </form>
+
+                                    <form id="form-eliminar-{{ $ayudante->id }}"
+                                          action="{{ route('ayudantes.destroy', $ayudante) }}"
+                                          method="POST" class="d-none">
+                                        @csrf
+                                        @method('DELETE')
+                                    </form>
                                 @endif
                             </td>
                         </tr>
@@ -130,4 +186,146 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalDisponibilidad" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header" id="headerDisponibilidad">
+                <h6 class="modal-title text-white">
+                    <i class="fas fa-power-off me-2"></i>Cambiar Disponibilidad
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="fas fa-user-circle modal-icon-large text-primary"></i>
+                <p class="mb-2">¿Cambiar la disponibilidad del ayudante?</p>
+                <div class="alert alert-light border mb-0">
+                    <strong id="nombreAyudanteDisponibilidad">--</strong>
+                    <br>
+                    <small class="text-muted">
+                        Estado actual:
+                        <span id="estadoActualDisponibilidad" class="fw-bold">--</span>
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn" id="btnConfirmarDisponibilidad" onclick="confirmarDisponibilidad()">
+                    <i class="fas fa-check me-1"></i> Sí, cambiar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header bg-danger text-white">
+                <h6 class="modal-title">
+                    <i class="fas fa-trash me-2"></i>Eliminar Ayudante
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="fas fa-exclamation-triangle modal-icon-large text-danger"></i>
+                <p class="mb-2">¿Estás seguro de que quieres eliminar este ayudante?</p>
+                <div class="alert alert-light border mb-3">
+                    <strong id="nombreAyudanteEliminar">--</strong>
+                </div>
+                <div class="alert alert-warning mb-0 small text-start">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Esta acción <strong>no se puede deshacer</strong>. El ayudante será eliminado permanentemente.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="confirmarEliminar()">
+                    <i class="fas fa-trash me-1"></i> Sí, eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
 @endsection
+
+@push('scripts')
+<script>
+
+function mostrarToast(tipo, mensaje) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast-custom toast-' + tipo;
+
+    const iconos = {
+        'success': 'fa-check-circle',
+        'error': 'fa-exclamation-circle',
+        'info': 'fa-info-circle'
+    };
+
+    toast.innerHTML = `
+        <i class="fas ${iconos[tipo] || iconos.info}"></i>
+        <div class="toast-text">${mensaje}</div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'slideOutToast 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+let ayudanteDisponibilidadId = null;
+let disponibleActual = false;
+
+function abrirModalDisponibilidad(id, nombre, disponible) {
+    ayudanteDisponibilidadId = id;
+    disponibleActual = disponible;
+
+    document.getElementById('nombreAyudanteDisponibilidad').textContent = nombre;
+    document.getElementById('estadoActualDisponibilidad').textContent = disponible ? 'Disponible' : 'Ocupado';
+
+
+    const header = document.getElementById('headerDisponibilidad');
+    const btn = document.getElementById('btnConfirmarDisponibilidad');
+    const accion = disponible ? 'ocupado' : 'disponible';
+
+    header.className = 'modal-header ' + (disponible ? 'bg-danger' : 'bg-success');
+    btn.className = 'btn ' + (disponible ? 'btn-danger' : 'btn-success');
+    btn.innerHTML = disponible
+        ? '<i class="fas fa-pause me-1"></i> Sí, marcar como ocupado'
+        : '<i class="fas fa-play me-1"></i> Sí, marcar como disponible';
+
+    new bootstrap.Modal(document.getElementById('modalDisponibilidad')).show();
+}
+
+function confirmarDisponibilidad() {
+    if (!ayudanteDisponibilidadId) return;
+
+    document.getElementById('form-disponibilidad-' + ayudanteDisponibilidadId).submit();
+}
+
+let ayudanteEliminarId = null;
+
+function abrirModalEliminar(id, nombre) {
+    ayudanteEliminarId = id;
+    document.getElementById('nombreAyudanteEliminar').textContent = nombre;
+
+    new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+}
+
+function confirmarEliminar() {
+    if (!ayudanteEliminarId) return;
+
+    document.getElementById('form-eliminar-' + ayudanteEliminarId).submit();
+}
+</script>
+@endpush

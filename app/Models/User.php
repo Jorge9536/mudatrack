@@ -20,41 +20,38 @@ class User extends Authenticatable
         'role',
         'google2fa_secret',
         'google2fa_enabled',
-        'recovery_codes'
+        'recovery_codes',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
         'google2fa_secret',
-        'recovery_codes'
+        'recovery_codes',
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed',
+        'password'          => 'hashed',
         'google2fa_enabled' => 'boolean',
-        'recovery_codes' => 'array'
+        'recovery_codes'    => 'array',
     ];
 
-    // ============================================
-    // CONSTANTES DE ROLES
-    // ============================================
-    public const ROL_ADMIN = 'admin';
+    public const ROL_ADMIN         = 'admin';
     public const ROL_RECEPCIONISTA = 'recepcionista';
-    public const ROL_CHOFER = 'chofer';
+    public const ROL_CHOFER        = 'chofer';
+    public const ROL_AYUDANTE      = 'ayudante';
 
-    // ============================================
-    // RELACIONES
-    // ============================================
     public function chofer()
     {
         return $this->hasOne(Chofer::class);
     }
 
-    // ============================================
-    // MÉTODOS PARA VERIFICAR ROLES
-    // ============================================
+    public function ayudante()
+    {
+        return $this->hasOne(Ayudante::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === self::ROL_ADMIN;
@@ -70,6 +67,11 @@ class User extends Authenticatable
         return $this->role === self::ROL_CHOFER;
     }
 
+    public function isAyudante(): bool
+    {
+        return $this->role === self::ROL_AYUDANTE;
+    }
+
     public function hasRole(string $role): bool
     {
         return $this->role === $role;
@@ -78,5 +80,15 @@ class User extends Authenticatable
     public function hasAnyRole(array $roles): bool
     {
         return in_array($this->role, $roles);
+    }
+
+    public static function rolesDisponibles(): array
+    {
+        return [
+            self::ROL_ADMIN         => 'Administrador',
+            self::ROL_RECEPCIONISTA => 'Recepcionista',
+            self::ROL_CHOFER        => 'Chofer',
+            self::ROL_AYUDANTE      => 'Ayudante',
+        ];
     }
 }

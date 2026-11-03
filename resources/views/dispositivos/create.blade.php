@@ -2,6 +2,92 @@
 
 @section('title', 'Asignar Dispositivo')
 
+@push('styles')
+<style>
+    
+    .dispositivo-item {
+        transition: all 0.2s ease;
+        border-left: 4px solid transparent;
+        border-radius: 8px !important;
+        margin-bottom: 6px;
+    }
+    .dispositivo-item:hover {
+        background: #f5f1e8;
+        border-left-color: #b87333;
+    }
+    .dispositivo-item.active,
+    .dispositivo-item.list-group-item-primary {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%) !important;
+        color: #fff !important;
+        border-left-color: #b87333 !important;
+        box-shadow: 0 4px 12px rgba(30, 58, 95, 0.25);
+    }
+    .dispositivo-item.active *,
+    .dispositivo-item.list-group-item-primary * {
+        color: #fff !important;
+    }
+    .dispositivo-item.active .badge,
+    .dispositivo-item.list-group-item-primary .badge {
+        color: #fff !important;
+    }
+
+    .toast-container-custom {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    .toast-custom {
+        min-width: 300px;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #fff;
+        font-family: 'Segoe UI', sans-serif;
+        animation: slideInToast 0.3s ease;
+        margin-bottom: 10px;
+    }
+    .toast-custom.toast-success { background: linear-gradient(135deg, #198754, #20c997); }
+    .toast-custom.toast-error   { background: linear-gradient(135deg, #dc3545, #f87171); }
+    .toast-custom.toast-warning { background: linear-gradient(135deg, #b87333, #d4a574); }
+    .toast-custom.toast-info    { background: linear-gradient(135deg, #1e3a5f, #2c5282); }
+    .toast-custom i { font-size: 1.5rem; }
+    .toast-custom .toast-text { flex: 1; font-size: 0.9rem; }
+    .toast-custom .toast-close {
+        background: none; border: none; color: #fff;
+        font-size: 1.2rem; cursor: pointer; opacity: 0.8;
+    }
+    .toast-custom .toast-close:hover { opacity: 1; }
+
+    @keyframes slideInToast {
+        from { transform: translateX(120%); opacity: 0; }
+        to   { transform: translateX(0);    opacity: 1; }
+    }
+    @keyframes slideOutToast {
+        from { transform: translateX(0);    opacity: 1; }
+        to   { transform: translateX(120%); opacity: 0; }
+    }
+
+    .modal-icon-large {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        margin: 0 auto 15px;
+    }
+    .modal-icon-large.bg-danger-soft {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
     <div class="d-flex align-items-center mb-4">
@@ -20,10 +106,10 @@
 
                         <div class="mb-3">
                             <label class="form-label required">ID del Dispositivo</label>
-                            <input type="text" 
-                                   name="dispositivo_id" 
+                            <input type="text"
+                                   name="dispositivo_id"
                                    id="dispositivo_id"
-                                   class="form-control @error('dispositivo_id') is-invalid @enderror" 
+                                   class="form-control @error('dispositivo_id') is-invalid @enderror"
                                    placeholder="Haz clic en un dispositivo de la lista →"
                                    value="{{ old('dispositivo_id') }}"
                                    readonly
@@ -99,11 +185,76 @@
     </div>
 </div>
 
+<div class="toast-container-custom" id="toastContainer"></div>
+
+<div class="modal fade" id="modalEliminarDispositivo" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header bg-danger text-white">
+                <h6 class="modal-title">
+                    <i class="fas fa-trash me-2"></i>Eliminar Dispositivo
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="modal-icon-large bg-danger-soft">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <p class="mb-2">¿Estás seguro de que quieres eliminar este dispositivo de Firebase?</p>
+                <div class="alert alert-light border mb-3">
+                    <i class="fas fa-satellite-dish me-2 text-muted"></i>
+                    <strong id="nombreDispositivoEliminar">--</strong>
+                </div>
+                <div class="alert alert-warning mb-0 small text-start">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Esta acción es <strong>PERMANENTE</strong> y no se puede deshacer. El dispositivo dejará de enviar ubicaciones al sistema.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar" onclick="confirmarEliminar()">
+                    <i class="fas fa-trash me-1"></i> Sí, eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
+function mostrarNotificacion(tipo, mensaje) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast-custom toast-' + tipo;
+
+    const iconos = {
+        'success': 'fa-check-circle',
+        'error':   'fa-exclamation-circle',
+        'warning': 'fa-exclamation-triangle',
+        'info':    'fa-info-circle'
+    };
+
+    toast.innerHTML = `
+        <i class="fas ${iconos[tipo] || iconos.info}"></i>
+        <div class="toast-text">${mensaje}</div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'slideOutToast 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
 function cargarDispositivos() {
     const container = document.getElementById('dispositivosFirebase');
-    
+
     container.innerHTML = `
         <div class="text-center py-3">
             <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
@@ -118,11 +269,11 @@ function cargarDispositivos() {
                 let html = '<div class="list-group">';
                 data.data.forEach(item => {
                     const hace = item.actualizado ? timeAgo(item.actualizado) : 'Nunca';
-                    
+
                     html += `
                         <div class="list-group-item d-flex justify-content-between align-items-center dispositivo-item"
                              data-id="${item.dispositivoId}">
-                            <div class="d-flex align-items-center flex-grow-1" 
+                            <div class="d-flex align-items-center flex-grow-1"
                                  style="cursor: pointer;"
                                  onclick="seleccionarDispositivo('${item.dispositivoId}')">
                                 <i class="fas fa-satellite-dish text-primary me-2"></i>
@@ -139,10 +290,10 @@ function cargarDispositivos() {
                                 <span class="badge bg-success">
                                     <i class="fas fa-check"></i> Activo
                                 </span>
-                                <button type="button" 
-                                        class="btn btn-sm btn-danger" 
+                                <button type="button"
+                                        class="btn btn-sm btn-danger"
                                         title="Eliminar de Firebase"
-                                        onclick="event.stopPropagation(); eliminarDispositivoFirebase('${item.dispositivoId}')">
+                                        onclick="event.stopPropagation(); abrirModalEliminar('${item.dispositivoId}')">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -173,27 +324,46 @@ function cargarDispositivos() {
 function seleccionarDispositivo(dispositivoId) {
     document.getElementById('dispositivo_id').value = dispositivoId;
     document.getElementById('btnSubmit').disabled = false;
-    
+
     document.querySelectorAll('.dispositivo-item').forEach(el => {
         el.classList.remove('active', 'list-group-item-primary');
     });
-    
+
     const selected = document.querySelector(`.dispositivo-item[data-id="${dispositivoId}"]`);
     if (selected) {
         selected.classList.add('active', 'list-group-item-primary');
     }
-    
+
     const input = document.getElementById('dispositivo_id');
     input.classList.add('is-valid');
     setTimeout(() => input.classList.remove('is-valid'), 1000);
+
+    mostrarNotificacion('info', 'Dispositivo "' + dispositivoId + '" seleccionado');
 }
 
-function eliminarDispositivoFirebase(dispositivoId) {
-    if (!confirm(`⚠️ ¿Eliminar el dispositivo "${dispositivoId}" de Firebase?\n\nEsta acción es PERMANENTE y no se puede deshacer.`)) {
-        return;
-    }
-    
-    fetch(`/dispositivos/firestore/${dispositivoId}/eliminar`, {
+let dispositivoAEliminar = null;
+
+function abrirModalEliminar(dispositivoId) {
+    dispositivoAEliminar = dispositivoId;
+    document.getElementById('nombreDispositivoEliminar').textContent = dispositivoId;
+
+    const btn = document.getElementById('btnConfirmarEliminar');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-trash me-1"></i> Sí, eliminar';
+
+    new bootstrap.Modal(document.getElementById('modalEliminarDispositivo')).show();
+}
+
+function confirmarEliminar() {
+    if (!dispositivoAEliminar) return;
+
+    const btn = document.getElementById('btnConfirmarEliminar');
+    const originalHTML = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Eliminando...';
+
+    fetch(`/dispositivos/firestore/${dispositivoAEliminar}/eliminar`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -203,59 +373,25 @@ function eliminarDispositivoFirebase(dispositivoId) {
     })
     .then(response => response.json())
     .then(data => {
+        bootstrap.Modal.getInstance(document.getElementById('modalEliminarDispositivo')).hide();
+
         if (data.success) {
+            mostrarNotificacion('success', 'Dispositivo eliminado correctamente');
             cargarDispositivos();
-            mostrarNotificacion('success', '✅ ' + data.message);
         } else {
-            mostrarNotificacion('error', '❌ ' + (data.message || 'Error al eliminar'));
+            mostrarNotificacion('error', data.message || 'Error al eliminar');
         }
+
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
     })
     .catch(error => {
         console.error('Error:', error);
-        mostrarNotificacion('error', '❌ Error de conexión');
+        bootstrap.Modal.getInstance(document.getElementById('modalEliminarDispositivo')).hide();
+        mostrarNotificacion('error', 'Error de conexión');
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
     });
-}
-
-function mostrarNotificacion(tipo, mensaje) {
-    let container = document.getElementById('toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'toast-container';
-        container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
-        document.body.appendChild(container);
-    }
-    
-    const toast = document.createElement('div');
-    const bgColor = tipo === 'success' ? '#198754' : '#dc3545';
-    const icono = tipo === 'success' ? 'check-circle' : 'exclamation-circle';
-    
-    toast.style.cssText = `
-        background: ${bgColor};
-        color: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 300px;
-        animation: slideIn 0.3s ease;
-        font-family: sans-serif;
-    `;
-    
-    toast.innerHTML = `
-        <i class="fas fa-${icono}" style="font-size: 20px;"></i>
-        <span style="flex: 1;">${mensaje}</span>
-        <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; cursor: pointer; font-size: 18px;">&times;</button>
-    `;
-    
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 5000);
 }
 
 function timeAgo(fecha) {
@@ -263,25 +399,12 @@ function timeAgo(fecha) {
     const ahora = new Date();
     const fechaDate = new Date(fecha);
     const diff = Math.floor((ahora - fechaDate) / 1000);
-    
+
     if (diff < 60) return 'Hace unos segundos';
     if (diff < 3600) return `Hace ${Math.floor(diff / 60)} minutos`;
     if (diff < 86400) return `Hace ${Math.floor(diff / 3600)} horas`;
     return `Hace ${Math.floor(diff / 86400)} días`;
 }
-
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-`;
-document.head.appendChild(style);
 
 document.addEventListener('DOMContentLoaded', cargarDispositivos);
 </script>

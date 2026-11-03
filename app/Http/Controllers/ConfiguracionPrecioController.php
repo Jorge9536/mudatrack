@@ -32,7 +32,6 @@ class ConfiguracionPrecioController extends BaseController
             'costo_km_extra' => 'required|numeric|min:0'
         ]);
 
-        // 🔥 OBTENER LA CONFIGURACIÓN Y ACTUALIZAR DIRECTAMENTE
         $config = ConfiguracionPrecio::first();
         if (!$config) {
             $config = new ConfiguracionPrecio();

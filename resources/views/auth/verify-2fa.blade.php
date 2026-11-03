@@ -45,7 +45,6 @@
     </div>
 </div>
 
-<!-- Modal de códigos de recuperación -->
 <div class="modal fade" id="recoveryModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">

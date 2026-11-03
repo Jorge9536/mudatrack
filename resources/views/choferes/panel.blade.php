@@ -45,7 +45,6 @@
             </div>
         </div>
 
-        <!-- Servicios Asignados -->
         <div class="col-lg-8">
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -150,13 +149,12 @@ function finalizarServicio(id) {
     }
 }
 
-// Simular GPS
 document.getElementById('btn-gps').addEventListener('click', function() {
     if (this.classList.contains('btn-success')) {
         this.classList.remove('btn-success');
         this.classList.add('btn-danger');
         this.innerHTML = '<i class="fas fa-satellite me-2"></i> GPS Activo';
-        // Simulación de envío de coordenadas
+
         setInterval(() => {
             const lat = -16.5 + (Math.random() - 0.5) * 0.01;
             const lng = -68.13 + (Math.random() - 0.5) * 0.01;

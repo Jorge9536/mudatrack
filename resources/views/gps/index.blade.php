@@ -2,6 +2,13 @@
 
 @section('title', 'Seguimiento GPS')
 
+@push('styles')
+<style>
+    .pagination { margin-bottom: 0; }
+    .pagination .page-link { padding: 0.25rem 0.6rem; font-size: 0.85rem; }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -10,43 +17,43 @@
             <small class="text-muted">Servicios en tiempo real</small>
         </div>
         <span class="badge bg-success">
-            <i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> 
+            <i class="fas fa-circle me-1" style="font-size:0.5rem;"></i>
             {{ $servicios->total() }} activos
         </span>
     </div>
-
-    <!-- Filtros -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <form method="GET" action="{{ route('gps.index') }}" class="row g-2 align-items-end">
                 <div class="col-md-4">
                     <label class="form-label small">Buscar</label>
-                    <input type="text" name="search" class="form-control" 
-                           placeholder="Cliente o destino..." value="{{ request('search') }}">
+                    <input type="text" name="search" class="form-control"
+                           placeholder="Cliente, teléfono u origen/destino..."
+                           value="{{ request('search') }}">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small">Estado</label>
                     <select name="estado" class="form-select">
                         <option value="">Todos</option>
-                        <option value="pendiente" {{ request('estado') == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                        <option value="confirmado" {{ request('estado') == 'confirmado' ? 'selected' : '' }}>Confirmado</option>
+                        <option value="pendiente"   {{ request('estado') == 'pendiente'   ? 'selected' : '' }}>Pendiente</option>
+                        <option value="confirmado"  {{ request('estado') == 'confirmado'  ? 'selected' : '' }}>Confirmado</option>
                         <option value="en_progreso" {{ request('estado') == 'en_progreso' ? 'selected' : '' }}>En Progreso</option>
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label small">Fecha</label>
-                    <input type="date" name="fecha" class="form-control" value="{{ request('fecha', date('Y-m-d')) }}">
+                    <label class="form-label small">Fecha (opcional)</label>
+                    <input type="date" name="fecha" class="form-control" value="{{ request('fecha') }}">
                 </div>
                 <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary w-100">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
                         <i class="fas fa-search me-1"></i> Filtrar
                     </button>
+                    <a href="{{ route('gps.index') }}" class="btn btn-outline-secondary" title="Limpiar filtros">
+                        <i class="fas fa-undo"></i>
+                    </a>
                 </div>
             </form>
         </div>
     </div>
-
-    <!-- Tarjetas de estadísticas -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
             <div class="card bg-light">
@@ -89,8 +96,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Lista de servicios -->
     <div class="card shadow-sm">
         <div class="card-header bg-white">
             <h6 class="mb-0"><i class="fas fa-list me-2 text-primary"></i>Servicios Activos</h6>
@@ -122,16 +127,14 @@
                             <td>
                                 @php
                                     $badgeClass = [
-                                        'pendiente' => 'secondary',
-                                        'confirmado' => 'primary',
+                                        'pendiente'   => 'secondary',
+                                        'confirmado'  => 'primary',
                                         'en_progreso' => 'warning',
-                                        'finalizado' => 'success',
-                                        'cancelado' => 'danger',
-                                        'pendiente_pago' => 'danger',
-                                        'pagado' => 'success'
+                                        'finalizado'  => 'success',
+                                        'cancelado'   => 'danger',
                                     ][$servicio->estado] ?? 'secondary';
                                 @endphp
-                                <span class="badge bg-{{ $badgeClass }}">
+                                <span class="badge bg-{{ $badgeClass }} {{ $servicio->estado == 'en_progreso' ? 'text-white' : '' }}">
                                     {{ $servicio->estado_label }}
                                 </span>
                             </td>
@@ -154,8 +157,8 @@
                         @empty
                         <tr>
                             <td colspan="7" class="text-center text-muted py-4">
-                                <i class="fas fa-map fa-3x d-block mb-2"></i>
-                                <p>No hay servicios activos para seguimiento</p>
+                                <i class="fas fa-map fa-3x d-block mb-2 opacity-50"></i>
+                                <p class="mb-0">No hay servicios activos para seguimiento</p>
                             </td>
                         </tr>
                         @endforelse
@@ -163,9 +166,11 @@
                 </table>
             </div>
         </div>
+        @if($servicios->hasPages())
         <div class="card-footer bg-white">
             {{ $servicios->appends(request()->query())->links() }}
         </div>
+        @endif
     </div>
 </div>
 @endsection

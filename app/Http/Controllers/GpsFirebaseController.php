@@ -20,9 +20,6 @@ class GpsFirebaseController extends Controller
         $this->apiKey = config('services.firebase.api_key');
     }
 
-    /**
-     * Obtener todas las ubicaciones desde Firestore
-     */
     public function getUbicacionesMapa()
     {
         try {
@@ -72,9 +69,6 @@ class GpsFirebaseController extends Controller
         }
     }
 
-    /**
-     * Obtener un dispositivo específico desde Firestore
-     */
     public function getUbicacionDispositivo($dispositivoId)
     {
         try {
@@ -116,9 +110,6 @@ class GpsFirebaseController extends Controller
         }
     }
 
-    /**
-     * Obtener todos los dispositivos activos
-     */
     public function getDispositivos()
     {
         try {
@@ -162,9 +153,6 @@ class GpsFirebaseController extends Controller
         }
     }
 
-    /**
-     * 🔥 ELIMINAR DISPOSITIVO DE FIRESTORE
-     */
     public function eliminarDispositivo($dispositivoId)
     {
         try {
@@ -195,10 +183,6 @@ class GpsFirebaseController extends Controller
             ], 500);
         }
     }
-
-    /**
-     * Función auxiliar para extraer valores de Firestore
-     */
     private function getFieldValue($fields, $fieldName, $type)
     {
         if (!isset($fields[$fieldName])) {

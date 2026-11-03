@@ -59,16 +59,13 @@ class FirestoreRestService
             return ['doubleValue' => $value];
         }
         if (is_array($value)) {
-            // Detectar si es un array asociativo (mapValue) o indexado (arrayValue)
             if (array_keys($value) !== range(0, count($value) - 1)) {
-                // Es un mapa (objeto)
                 return [
                     'mapValue' => [
                         'fields' => $this->toFirestoreFormat($value)['fields'],
                     ],
                 ];
             }
-            // Es un array indexado
             return [
                 'arrayValue' => [
                     'values' => array_map(fn($v) => $this->convertValue($v), $value),
@@ -83,10 +80,6 @@ class FirestoreRestService
         }
         return ['stringValue' => (string) $value];
     }
-
-    /**
-     * Escribir/actualizar un documento
-     */
     public function set(string $coleccion, string $id, array $datos): bool
     {
         try {
@@ -181,9 +174,7 @@ class FirestoreRestService
         return null;
     }
 
-    /**
-     * Guardar error en archivo separado SIN problemas de codificación
-     */
+
     protected function guardarErrorFirestore(string $tipo, string $coleccion, string $id, string $detalle): void
     {
         $logFile = storage_path('logs/firestore_error.log');
