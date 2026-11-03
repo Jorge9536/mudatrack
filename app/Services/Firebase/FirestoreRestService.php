@@ -18,42 +18,31 @@ class FirestoreRestService
         $this->projectId = config('firebase.project_id', 'gps1-e12e5');
         $this->baseUrl = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents";
 
-        // Ruta local para desarrollo (tu PC)
-        $credentialsPath = storage_path('app/firebase/service-account.json');
+        // 1. Intentamos leer el archivo de Render (Linux)
+        $renderSecretPath = '/etc/secrets/service-account.json';
+        $credentialsArray = null;
 
-        // Lógica para Render (Producción)
-        if (env('APP_ENV') === 'production') {
-            $renderSecretPath = '/etc/secrets/service-account.json';
-            
-            if (file_exists($renderSecretPath)) {
-                $jsonContent = @file_get_contents($renderSecretPath);
-                
-                if ($jsonContent !== false) {
-                    $credentialsArray = json_decode($jsonContent, true);
-                    
-                    // Si el JSON se decodificó correctamente, lo pasamos como array
-                    if (is_array($credentialsArray) && isset($credentialsArray['private_key'])) {
-                        $this->credentials = new ServiceAccountCredentials(
-                            'https://www.googleapis.com/auth/datastore',
-                            $credentialsArray // <-- Pasamos el ARRAY, no la ruta
-                        );
-                        $this->client = new Client();
-                        return; // Terminamos aquí
-                    } else {
-                        // Loguear si el JSON está mal formado
-                        $this->guardarErrorFirestore('INIT ERROR', 'Auth', 'Render', 'El JSON del Secret File está vacío o mal formado.');
-                    }
-                }
-            } else {
-                 $this->guardarErrorFirestore('INIT ERROR', 'Auth', 'Render', 'No se encontró el archivo en /etc/secrets/');
+        if (file_exists($renderSecretPath)) {
+            $jsonContent = @file_get_contents($renderSecretPath);
+            if ($jsonContent !== false) {
+                $credentialsArray = json_decode($jsonContent, true);
             }
         }
 
-        // Flujo para Local (o si falla Render)
-        $this->credentials = new ServiceAccountCredentials(
-            'https://www.googleapis.com/auth/datastore',
-            $credentialsPath
-        );
+        // 2. Si encontramos el JSON de Render, lo usamos en memoria (evita error de archivo no existe)
+        if (is_array($credentialsArray) && isset($credentialsArray['private_key'])) {
+            $this->credentials = new ServiceAccountCredentials(
+                'https://www.googleapis.com/auth/datastore',
+                $credentialsArray
+            );
+        } else {
+            // 3. Si no estamos en Render, usamos la ruta local para Windows
+            $credentialsPath = storage_path('app/firebase/service-account.json');
+            $this->credentials = new ServiceAccountCredentials(
+                'https://www.googleapis.com/auth/datastore',
+                $credentialsPath
+            );
+        }
 
         $this->client = new Client();
     }
