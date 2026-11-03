@@ -17,8 +17,7 @@ class FirestoreRestService
     {
         $this->projectId = config('firebase.project_id', 'gps1-e12e5');
         $this->baseUrl = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents";
-
-        $credentialsPath = env('GOOGLE_APPLICATION_CREDENTIALS', storage_path('app/firebase/service-account.json'));
+        $credentialsPath = env('GOOGLE_APPLICATION_CREDENTIALS', '/etc/secrets/service-account.json');
         $this->credentials = new ServiceAccountCredentials(
             'https://www.googleapis.com/auth/datastore',
             $credentialsPath
