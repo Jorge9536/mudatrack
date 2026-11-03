@@ -13,42 +13,38 @@ class FirestoreRestService
     protected string $projectId;
     protected $credentials;
 
-    public function __construct()
+        public function __construct()
     {
         $this->projectId = config('firebase.project_id', 'gps1-e12e5');
         $this->baseUrl = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents";
 
-        // 1. Ruta local por defecto
+        // Ruta local por defecto
         $credentialsPath = storage_path('app/firebase/service-account.json');
 
-        // 2. Lógica para Render (Producción)
+        // Si estamos en Render
         if (env('APP_ENV') === 'production') {
             $renderSecretPath = '/etc/secrets/service-account.json';
             
-            // Si el archivo de Render existe, lo copiamos a nuestro storage
+            // Si el archivo de Render existe, leemos su contenido
             if (file_exists($renderSecretPath)) {
-                $targetDir = storage_path('app/firebase');
-                $targetPath = $targetDir . '/service-account.json';
-
-                // Creamos la carpeta si no existe
-                if (!is_dir($targetDir)) {
-                    mkdir($targetDir, 0755, true);
-                }
-
-                // Intentamos copiar el archivo (evita el error de Permission Denied)
-                if (@copy($renderSecretPath, $targetPath)) {
-                    $credentialsPath = $targetPath;
-                } else {
-                    // Si falla la copia (por permisos), leemos el contenido directo y lo guardamos
-                    $content = @file_get_contents($renderSecretPath);
-                    if ($content !== false) {
-                        file_put_contents($targetPath, $content);
-                        $credentialsPath = $targetPath;
-                    }
+                $jsonContent = @file_get_contents($renderSecretPath);
+                if ($jsonContent !== false) {
+                    // Decodificamos el JSON en un array
+                    $credentialsArray = json_decode($jsonContent, true);
+                    
+                    // Se lo pasamos a Google directamente en memoria (sin buscar archivos)
+                    $this->credentials = new ServiceAccountCredentials(
+                        'https://www.googleapis.com/auth/datastore',
+                        $credentialsArray
+                    );
+                    
+                    $this->client = new Client();
+                    return; // Terminamos la ejecución aquí
                 }
             }
         }
 
+        // Flujo normal para Local (o si falla Render)
         $this->credentials = new ServiceAccountCredentials(
             'https://www.googleapis.com/auth/datastore',
             $credentialsPath
