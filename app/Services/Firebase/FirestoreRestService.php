@@ -17,7 +17,38 @@ class FirestoreRestService
     {
         $this->projectId = config('firebase.project_id', 'gps1-e12e5');
         $this->baseUrl = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents";
-        $credentialsPath = env('GOOGLE_APPLICATION_CREDENTIALS', '/etc/secrets/service-account.json');
+
+        // 1. Ruta local por defecto
+        $credentialsPath = storage_path('app/firebase/service-account.json');
+
+        // 2. Lógica para Render (Producción)
+        if (env('APP_ENV') === 'production') {
+            $renderSecretPath = '/etc/secrets/service-account.json';
+            
+            // Si el archivo de Render existe, lo copiamos a nuestro storage
+            if (file_exists($renderSecretPath)) {
+                $targetDir = storage_path('app/firebase');
+                $targetPath = $targetDir . '/service-account.json';
+
+                // Creamos la carpeta si no existe
+                if (!is_dir($targetDir)) {
+                    mkdir($targetDir, 0755, true);
+                }
+
+                // Intentamos copiar el archivo (evita el error de Permission Denied)
+                if (@copy($renderSecretPath, $targetPath)) {
+                    $credentialsPath = $targetPath;
+                } else {
+                    // Si falla la copia (por permisos), leemos el contenido directo y lo guardamos
+                    $content = @file_get_contents($renderSecretPath);
+                    if ($content !== false) {
+                        file_put_contents($targetPath, $content);
+                        $credentialsPath = $targetPath;
+                    }
+                }
+            }
+        }
+
         $this->credentials = new ServiceAccountCredentials(
             'https://www.googleapis.com/auth/datastore',
             $credentialsPath
@@ -79,6 +110,7 @@ class FirestoreRestService
         }
         return ['stringValue' => (string) $value];
     }
+
     public function set(string $coleccion, string $id, array $datos): bool
     {
         try {
@@ -172,7 +204,6 @@ class FirestoreRestService
         }
         return null;
     }
-
 
     protected function guardarErrorFirestore(string $tipo, string $coleccion, string $id, string $detalle): void
     {
