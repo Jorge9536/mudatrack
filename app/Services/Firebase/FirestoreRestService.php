@@ -13,37 +13,43 @@ class FirestoreRestService
     protected string $projectId;
     protected $credentials;
 
-        public function __construct()
+    public function __construct()
     {
         $this->projectId = config('firebase.project_id', 'gps1-e12e5');
         $this->baseUrl = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents";
 
-        // Ruta local por defecto
+        // Ruta local para desarrollo (tu PC)
         $credentialsPath = storage_path('app/firebase/service-account.json');
 
-        // Si estamos en Render
+        // Lógica para Render (Producción)
         if (env('APP_ENV') === 'production') {
             $renderSecretPath = '/etc/secrets/service-account.json';
             
-            // Si el archivo de Render existe, leemos su contenido
             if (file_exists($renderSecretPath)) {
                 $jsonContent = @file_get_contents($renderSecretPath);
+                
                 if ($jsonContent !== false) {
-                    // Decodificamos el JSON en un array
                     $credentialsArray = json_decode($jsonContent, true);
                     
-                    // Se lo pasamos a Google directamente en memoria (sin buscar archivos)
-                    $this->credentials = new ServiceAccountCredentials(
-                        'https://www.googleapis.com/auth/datastore',
-                        $credentialsArray
-                    );
-                    
-                    $this->client = new Client();
-                    return; // Terminamos la ejecución aquí
+                    // Si el JSON se decodificó correctamente, lo pasamos como array
+                    if (is_array($credentialsArray) && isset($credentialsArray['private_key'])) {
+                        $this->credentials = new ServiceAccountCredentials(
+                            'https://www.googleapis.com/auth/datastore',
+                            $credentialsArray // <-- Pasamos el ARRAY, no la ruta
+                        );
+                        $this->client = new Client();
+                        return; // Terminamos aquí
+                    } else {
+                        // Loguear si el JSON está mal formado
+                        $this->guardarErrorFirestore('INIT ERROR', 'Auth', 'Render', 'El JSON del Secret File está vacío o mal formado.');
+                    }
                 }
+            } else {
+                 $this->guardarErrorFirestore('INIT ERROR', 'Auth', 'Render', 'No se encontró el archivo en /etc/secrets/');
             }
         }
 
+        // Flujo para Local (o si falla Render)
         $this->credentials = new ServiceAccountCredentials(
             'https://www.googleapis.com/auth/datastore',
             $credentialsPath
@@ -210,6 +216,6 @@ class FirestoreRestService
         $mensaje .= "Detalle: {$detalle}\n";
         $mensaje .= str_repeat("=", 80) . "\n\n";
 
-        file_put_contents($logFile, $mensaje, FILE_APPEND);
+        @file_put_contents($logFile, $mensaje, FILE_APPEND);
     }
 }
