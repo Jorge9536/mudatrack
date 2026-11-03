@@ -44,7 +44,6 @@ class FirestoreRestService
             }
         }
 
-        // Flujo normal para Local (o si falla Render)
         $this->credentials = new ServiceAccountCredentials(
             'https://www.googleapis.com/auth/datastore',
             $credentialsPath
