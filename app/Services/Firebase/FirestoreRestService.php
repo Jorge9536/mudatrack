@@ -18,25 +18,33 @@ class FirestoreRestService
         $this->projectId = config('firebase.project_id', 'gps1-e12e5');
         $this->baseUrl = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents";
 
-        // 1. Intentamos leer el archivo de Render (Linux)
-        $renderSecretPath = '/etc/secrets/service-account.json';
         $credentialsArray = null;
 
-        if (file_exists($renderSecretPath)) {
-            $jsonContent = @file_get_contents($renderSecretPath);
-            if ($jsonContent !== false) {
-                $credentialsArray = json_decode($jsonContent, true);
+        // 1. Prioridad 1: Variable de Entorno (Ideal para Render, a prueba de fallos)
+        $jsonContent = env('FIREBASE_CREDENTIALS_JSON');
+        if (!empty($jsonContent)) {
+            $credentialsArray = json_decode($jsonContent, true);
+        }
+
+        // 2. Prioridad 2: Archivo Secret de Render (Linux)
+        if (!is_array($credentialsArray) || !isset($credentialsArray['private_key'])) {
+            $renderSecretPath = '/etc/secrets/service-account.json';
+            if (file_exists($renderSecretPath)) {
+                $jsonContent = @file_get_contents($renderSecretPath);
+                if ($jsonContent !== false) {
+                    $credentialsArray = json_decode($jsonContent, true);
+                }
             }
         }
 
-        // 2. Si encontramos el JSON de Render, lo usamos en memoria (evita error de archivo no existe)
+        // 3. Aplicar credenciales si se encontraron
         if (is_array($credentialsArray) && isset($credentialsArray['private_key'])) {
             $this->credentials = new ServiceAccountCredentials(
                 'https://www.googleapis.com/auth/datastore',
                 $credentialsArray
             );
         } else {
-            // 3. Si no estamos en Render, usamos la ruta local para Windows
+            // 4. Fallback final: Ruta local de Windows (Desarrollo)
             $credentialsPath = storage_path('app/firebase/service-account.json');
             $this->credentials = new ServiceAccountCredentials(
                 'https://www.googleapis.com/auth/datastore',
